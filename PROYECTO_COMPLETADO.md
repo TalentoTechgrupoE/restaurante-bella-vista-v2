@@ -44,5 +44,9 @@ http://localhost:3000
 
 ---
 
-**Equipo de Desarrollo Bella Vista**  
+**Equipo de Desarrollo Bella Vista** 
+Grupo E
+Jesus A gil P jgilprada@gmail.com
+Cesar Saenz
+Brandon 
 **Julio 2025**
