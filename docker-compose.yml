@@ -1,0 +1,52 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: bella-vista-postgres
+    environment:
+      POSTGRES_DB: bella_vista
+      POSTGRES_USER: restaurante
+      POSTGRES_PASSWORD: bella123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - restaurante-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U restaurante -d bella_vista"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend Usuario
+  frontend-usuario:
+    build:
+      context: ./frontend-usuario
+      dockerfile: Dockerfile
+    container_name: bella-vista-frontend-usuario
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: postgres
+      DB_NAME: bella_vista
+      DB_USER: restaurante
+      DB_PASSWORD: bella123
+    networks:
+      - restaurante-network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  restaurante-network:
+    driver: bridge
+    name: bella-vista-network

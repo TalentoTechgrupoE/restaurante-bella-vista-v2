@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        // Variables globales para el carrusel
+        window.DESTACADOS_COUNT = <%- destacados.length %>;
+    </script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">🍽️ Bella Vista</h1>
+                <nav class="nav">
+                    <a href="/" class="nav-link">Menú</a>
+                    <a href="/pedido" class="nav-link">Pedido</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero">
+                <h2 class="hero-title">Bienvenido a Bella Vista</h2>
+                <p class="hero-subtitle">Descubre nuestro exquisito menú y realiza tu pedido</p>
+            </section>
+
+            <!-- Menu Section -->
+            <section class="menu" x-data="menuApp()">
+                <!-- Hero Destacados -->
+                <div class="destacados-section" x-data="carruselDestacados()">
+                    <h3 class="section-title">✨ Platos Destacados</h3>
+                    
+                    <!-- Carrusel Container -->
+                    <div class="carrusel-container">
+                        <!-- Botón Anterior -->
+                        <button @click="anterior()" class="carrusel-btn carrusel-btn-prev" :disabled="currentIndex === 0">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+
+                        <!-- Carrusel Items -->
+                        <div class="carrusel-track" :style="`transform: translateX(-${currentIndex * (100 / itemsVisible)}%)`">
+                            <% destacados.forEach((plato, index) => { %>
+                            <div class="carrusel-item">
+                                <div class="plato-destacado">
+                                    <div class="plato-imagen"><%= plato.imagen || plato.imagen_url || '🍽️' %></div>
+                                    <div class="plato-info">
+                                        <h4 class="plato-nombre"><%= plato.nombre %></h4>
+                                        <p class="plato-descripcion"><%= plato.descripcion %></p>
+                                        <div class="plato-precio">$<%= typeof plato.precio === 'string' ? parseFloat(plato.precio).toFixed(2) : plato.precio.toFixed(2) %></div>
+                                    </div>
+                                    <button class="btn-agregar" @click="$root.abrirModal($root.productos.find(p => p.id === <%= plato.id %>))">
+                                        🛒 Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            <% }); %>
+                        </div>
+
+                        <!-- Botón Siguiente -->
+                        <button @click="siguiente()" class="carrusel-btn carrusel-btn-next" :disabled="currentIndex >= maxIndex">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Indicadores de posición -->
+                    <div class="carrusel-indicators">
+                        <template x-for="(dot, index) in Array(totalDots)" :key="index">
+                            <button 
+                                @click="irA(index)" 
+                                class="indicator-dot" 
+                                :class="{ 'active': index === Math.floor(currentIndex / itemsVisible) }"
+                            ></button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Category Filters -->
+                <div class="filters">
+                    <h3 class="section-title">🍽️ Nuestro Menú</h3>
+                    <div class="filter-buttons">
+                        <button 
+                            @click="filtrarCategoria(null)" 
+                            :class="{ 'active': categoriaActiva === null }"
+                            class="filter-btn"
+                        >
+                            🍴 Todos
+                        </button>
+                        <% categorias.forEach(categoria => { %>
+                        <button 
+                            @click="filtrarCategoria(<%= categoria.id %>)" 
+                            :class="{ 'active': categoriaActiva === <%= categoria.id %> }"
+                            class="filter-btn"
+                        >
+                            <%= categoria.icono || '🍽️' %> <%= categoria.nombre %>
+                        </button>
+                        <% }); %>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="products-grid">
+                    <template x-for="producto in productosFiltrados" :key="producto.id">
+                        <div class="product-card">
+                            <div class="product-image">
+                                <span class="product-emoji" x-text="producto.imagen"></span>
+                                <div class="product-badge" x-show="producto.destacado">⭐ Destacado</div>
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name" x-text="producto.nombre"></h3>
+                                <p class="product-description" x-text="producto.descripcion"></p>
+                                <div class="product-details">
+                                    <span class="product-price" x-text="'$' + producto.precio.toFixed(2)"></span>
+                                    <span class="product-time" x-text="'⏱️ ' + (producto.tiempo_preparacion || 15) + ' min'"></span>
+                                </div>
+                                <div class="product-actions">
+                                    <button 
+                                        @click="abrirModal(producto)"
+                                        class="btn btn-primary"
+                                    >
+                                        🛒 Agregar al pedido
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Modal Agregar Producto -->
+                <div x-show="mostrarModal" class="modal-overlay" @click="cerrarModal()" x-transition>
+                    <div class="modal-content" @click.stop>
+                        <div class="modal-header">
+                            <h3>🍽️ Agregar al Pedido</h3>
+                            <button @click="cerrarModal()" class="btn-close">×</button>
+                        </div>
+                        
+                        <div class="modal-body" x-show="productoSeleccionado">
+                            <!-- Información del producto -->
+                            <div class="producto-info">
+                                <div class="producto-imagen">
+                                    <span x-text="productoSeleccionado?.imagen || '🍽️'"></span>
+                                </div>
+                                <div class="producto-detalles">
+                                    <h4 x-text="productoSeleccionado?.nombre"></h4>
+                                    <p x-text="productoSeleccionado?.descripcion"></p>
+                                    <div class="precio-tiempo">
+                                        <span class="precio" x-text="'$' + (productoSeleccionado?.precio || 0).toFixed(2)"></span>
+                                        <span class="tiempo" x-text="'⏱️ ' + (productoSeleccionado?.tiempo_preparacion || 15) + ' min'"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Selección de mesa -->
+                            <div class="form-group">
+                                <label>🪑 Número de Mesa</label>
+                                <select x-model="mesaSeleccionada" class="form-select">
+                                    <option value="">Seleccionar mesa...</option>
+                                    <option value="1">Mesa 1 - Terraza (2 personas)</option>
+                                    <option value="2">Mesa 2 - Interior (4 personas)</option>
+                                    <option value="3">Mesa 3 - Ventana (2 personas)</option>
+                                    <option value="4">Mesa 4 - Interior (6 personas)</option>
+                                    <option value="5">Mesa 5 - Terraza (4 personas)</option>
+                                    <option value="6">Mesa 6 - Privada (8 personas)</option>
+                                    <option value="7">Mesa 7 - Interior (2 personas)</option>
+                                    <option value="8">Mesa 8 - Terraza (4 personas)</option>
+                                </select>
+                            </div>
+
+                            <!-- Selección de cantidad -->
+                            <div class="form-group">
+                                <label>🔢 Cantidad</label>
+                                <div class="cantidad-controls">
+                                    <button @click="if(cantidadSeleccionada > 1) cantidadSeleccionada--" class="btn-quantity">-</button>
+                                    <input type="number" x-model="cantidadSeleccionada" min="1" max="10" class="cantidad-input">
+                                    <button @click="if(cantidadSeleccionada < 10) cantidadSeleccionada++" class="btn-quantity">+</button>
+                                </div>
+                            </div>
+
+                            <!-- Notas especiales -->
+                            <div class="form-group">
+                                <label>📝 Notas especiales (opcional)</label>
+                                <textarea x-model="notasEspeciales" placeholder="Ej: Sin cebolla, extra salsa, etc." class="form-textarea"></textarea>
+                            </div>
+
+                            <!-- Resumen del pedido -->
+                            <div class="resumen-pedido">
+                                <div class="resumen-item">
+                                    <span>Subtotal:</span>
+                                    <span x-text="'$' + ((productoSeleccionado?.precio || 0) * cantidadSeleccionada).toFixed(2)"></span>
+                                </div>
+                                <div class="resumen-item">
+                                    <span>Tiempo estimado:</span>
+                                    <span x-text="calcularTiempoTotal() + ' minutos'"></span>
+                                </div>
+                                <div class="resumen-item total">
+                                    <span>Total:</span>
+                                    <span x-text="'$' + ((productoSeleccionado?.precio || 0) * cantidadSeleccionada).toFixed(2)"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button @click="cerrarModal()" class="btn btn-secondary">Cancelar</button>
+                            <button 
+                                @click="confirmarAgregarAlCarrito()" 
+                                :disabled="!mesaSeleccionada"
+                                class="btn btn-primary"
+                            >
+                                🛒 Agregar al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cart -->
+                <div x-show="carrito.length > 0" class="cart-sidebar">
+                    <div class="cart-header">
+                        <h3>🛒 Carrito</h3>
+                        <span class="cart-count" x-text="cantidadCarrito + ' items'"></span>
+                    </div>
+                    <div class="cart-items">
+                        <template x-for="item in carrito" :key="item.id + '-' + item.mesa">
+                            <div class="cart-item">
+                                <div class="item-info">
+                                    <h4 x-text="item.nombre"></h4>
+                                    <p class="item-precio" x-text="'$' + item.precio.toFixed(2) + ' x ' + item.cantidad"></p>
+                                    <p class="item-mesa" x-text="'🪑 Mesa: ' + item.mesa"></p>
+                                    <p class="item-tiempo" x-text="'⏱️ ' + item.tiempo_preparacion + ' min'" x-show="item.tiempo_preparacion"></p>
+                                    <p class="item-notas" x-text="'📝 ' + item.notas" x-show="item.notas"></p>
+                                </div>
+                                <div class="item-controls">
+                                    <button @click="eliminarDelCarrito(item.id, item.mesa)" class="btn-remove">🗑️</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="cart-footer">
+                        <div class="cart-resumen">
+                            <div class="cart-total">
+                                <strong>Total: $<span x-text="totalCarrito.toFixed(2)"></span></strong>
+                            </div>
+                            <div class="cart-tiempo-total" x-show="tiempoTotalEstimado > 0">
+                                <span>⏱️ Tiempo estimado: <strong x-text="tiempoTotalEstimado + ' min'"></strong></span>
+                            </div>
+                        </div>
+                        <button @click="irAPedido()" class="btn btn-success">Realizar Pedido</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Bella Vista Restaurant. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Menu App Data
+        function menuApp() {
+            // Convertir precios a números para consistencia
+            const productosConPreciosNumericos = <%- JSON.stringify(productos) %>.map(p => ({
+                ...p,
+                precio: typeof p.precio === 'string' ? parseFloat(p.precio) : p.precio,
+                imagen: p.imagen || p.imagen_url || '🍽️',
+                tiempo_preparacion: p.tiempo_preparacion || 15 // minutos por defecto
+            }));
+            
+            return {
+                categorias: <%- JSON.stringify(categorias) %>,
+                productos: productosConPreciosNumericos,
+                categoriaActiva: null,
+                carrito: JSON.parse(localStorage.getItem('carrito') || '[]'),
+                
+                // Variables del modal
+                mostrarModal: false,
+                productoSeleccionado: null,
+                mesaSeleccionada: '',
+                cantidadSeleccionada: 1,
+                notasEspeciales: '',
+                
+                // Variables del carrusel
+                carruselIndex: 0,
+                carruselItemsVisible: window.innerWidth >= 768 ? 3 : 1,
+                carruselTotalItems: 6, // Número fijo por ahora para evitar errores
+                
+                init() {
+                    console.log('🔧 MenuApp inicializando...');
+                    console.log('📊 Carrusel total items:', this.carruselTotalItems);
+                    console.log('📊 Items visibles:', this.carruselItemsVisible);
+                    console.log('🛒 Carrito inicial:', this.carrito);
+                    
+                    // Auto-rotación del carrusel cada 5 segundos
+                    setInterval(() => {
+                        this.carruselSiguiente();
+                    }, 5000);
+                    
+                    // Responsive del carrusel
+                    window.addEventListener('resize', () => {
+                        this.carruselItemsVisible = window.innerWidth >= 768 ? 3 : 1;
+                    });
+                },
+                
+                get carruselMaxIndex() {
+                    return Math.max(0, this.carruselTotalItems - this.carruselItemsVisible);
+                },
+                
+                get carruselTotalDots() {
+                    return Math.ceil(this.carruselTotalItems / this.carruselItemsVisible);
+                },
+                
+                carruselAnterior() {
+                    console.log('🔄 Carrusel anterior', this.carruselIndex);
+                    if (this.carruselIndex > 0) {
+                        this.carruselIndex--;
+                    }
+                },
+                
+                carruselSiguiente() {
+                    console.log('🔄 Carrusel siguiente', this.carruselIndex, 'max:', this.carruselMaxIndex);
+                    if (this.carruselIndex < this.carruselMaxIndex) {
+                        this.carruselIndex++;
+                    } else {
+                        // Reiniciar al principio
+                        this.carruselIndex = 0;
+                    }
+                },
+                
+                carruselIrA(dotIndex) {
+                    this.carruselIndex = dotIndex * this.carruselItemsVisible;
+                    if (this.carruselIndex > this.carruselMaxIndex) {
+                        this.carruselIndex = this.carruselMaxIndex;
+                    }
+                },
+                
+                get productosFiltrados() {
+                    if (this.categoriaActiva === null) {
+                        return this.productos;
+                    }
+                    return this.productos.filter(p => p.categoria_id === this.categoriaActiva);
+                },
+                
+                filtrarCategoria(categoriaId) {
+                    this.categoriaActiva = categoriaId;
+                    this.mostrarNotificacion(`Mostrando: ${categoriaId ? this.categorias.find(c => c.id === categoriaId).nombre : 'Todos los platos'}`);
+                },
+                
+                abrirModal(producto) {
+                    this.productoSeleccionado = producto;
+                    this.cantidadSeleccionada = 1;
+                    this.mesaSeleccionada = '';
+                    this.notasEspeciales = '';
+                    this.mostrarModal = true;
+                },
+                
+                cerrarModal() {
+                    this.mostrarModal = false;
+                    this.productoSeleccionado = null;
+                },
+                
+                calcularTiempoTotal() {
+                    if (!this.productoSeleccionado) return 0;
+                    const tiempoBase = this.productoSeleccionado.tiempo_preparacion || 15;
+                    // Agregar 2 minutos por cada unidad adicional
+                    const tiempoExtra = (this.cantidadSeleccionada - 1) * 2;
+                    return tiempoBase + tiempoExtra;
+                },
+                
+                confirmarAgregarAlCarrito() {
+                    console.log('🛒 Agregando al carrito:', {
+                        mesa: this.mesaSeleccionada,
+                        notas: this.notasEspeciales,
+                        producto: this.productoSeleccionado?.nombre
+                    });
+                    
+                    if (!this.mesaSeleccionada || !this.productoSeleccionado) {
+                        console.log('❌ Faltan datos:', { mesa: this.mesaSeleccionada, producto: this.productoSeleccionado });
+                        return;
+                    }
+                    
+                    const existente = this.carrito.find(item => 
+                        item.id === this.productoSeleccionado.id && 
+                        item.mesa === this.mesaSeleccionada
+                    );
+                    
+                    if (existente) {
+                        existente.cantidad += this.cantidadSeleccionada;
+                        if (this.notasEspeciales) {
+                            existente.notas = existente.notas ? 
+                                existente.notas + '; ' + this.notasEspeciales : 
+                                this.notasEspeciales;
+                        }
+                    } else {
+                        this.carrito.push({
+                            id: this.productoSeleccionado.id,
+                            nombre: this.productoSeleccionado.nombre,
+                            precio: this.productoSeleccionado.precio,
+                            cantidad: this.cantidadSeleccionada,
+                            imagen: this.productoSeleccionado.imagen,
+                            mesa: this.mesaSeleccionada,
+                            notas: this.notasEspeciales,
+                            tiempo_preparacion: this.calcularTiempoTotal()
+                        });
+                    }
+                    
+                    this.guardarCarrito();
+                    this.mostrarNotificacion(
+                        `✅ ${this.cantidadSeleccionada}x ${this.productoSeleccionado.nombre} agregado al carrito para Mesa ${this.mesaSeleccionada}`
+                    );
+                    this.cerrarModal();
+                },
+                
+                eliminarDelCarrito(id, mesa) {
+                    const index = this.carrito.findIndex(item => item.id === id && item.mesa === mesa);
+                    if (index !== -1) {
+                        this.carrito.splice(index, 1);
+                        this.guardarCarrito();
+                        this.mostrarNotificacion('❌ Producto eliminado del carrito');
+                    }
+                },
+                
+                get totalCarrito() {
+                    return this.carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+                },
+                
+                get cantidadCarrito() {
+                    return this.carrito.reduce((total, item) => total + item.cantidad, 0);
+                },
+                
+                get tiempoTotalEstimado() {
+                    if (this.carrito.length === 0) return 0;
+                    // El tiempo total es el máximo tiempo de preparación entre todos los items
+                    return Math.max(...this.carrito.map(item => item.tiempo_preparacion || 15));
+                },
+                
+                guardarCarrito() {
+                    localStorage.setItem('carrito', JSON.stringify(this.carrito));
+                },
+                
+                irAPedido() {
+                    window.location.href = '/pedido';
+                },
+                
+                mostrarNotificacion(mensaje) {
+                    // Crear notificación moderna
+                    const notification = document.createElement('div');
+                    notification.className = 'notification show';
+                    notification.innerHTML = `
+                        <div class="notification-content">
+                            ${mensaje}
+                        </div>
+                    `;
+                    document.body.appendChild(notification);
+                    
+                    // Remover después de 3 segundos
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                        setTimeout(() => notification.remove(), 300);
+                    }, 3000);
+                }
+            }
+        }
+
+        // Función del Carrusel de Destacados
+        function carruselDestacados() {
+            return {
+                currentIndex: 0,
+                itemsVisible: window.innerWidth >= 1024 ? 3 : window.innerWidth >= 768 ? 2 : 1,
+                totalItems: window.DESTACADOS_COUNT || 0,
+                
+                init() {
+                    console.log('🎠 Carrusel destacados iniciando...');
+                    console.log('📊 Total items:', this.totalItems);
+                    console.log('👀 Items visibles:', this.itemsVisible);
+                    
+                    // Auto-rotación cada 5 segundos
+                    setInterval(() => {
+                        if (this.currentIndex >= this.maxIndex) {
+                            this.currentIndex = 0;
+                        } else {
+                            this.siguiente();
+                        }
+                    }, 5000);
+                    
+                    // Responsive del carrusel
+                    window.addEventListener('resize', () => {
+                        const newItemsVisible = window.innerWidth >= 1024 ? 3 : window.innerWidth >= 768 ? 2 : 1;
+                        if (newItemsVisible !== this.itemsVisible) {
+                            this.itemsVisible = newItemsVisible;
+                            // Ajustar currentIndex si está fuera del rango
+                            if (this.currentIndex > this.maxIndex) {
+                                this.currentIndex = this.maxIndex;
+                            }
+                        }
+                    });
+                },
+                
+                get maxIndex() {
+                    return Math.max(0, this.totalItems - this.itemsVisible);
+                },
+                
+                get totalDots() {
+                    return Math.ceil(this.totalItems / this.itemsVisible);
+                },
+                
+                anterior() {
+                    if (this.currentIndex > 0) {
+                        this.currentIndex--;
+                    }
+                },
+                
+                siguiente() {
+                    if (this.currentIndex < this.maxIndex) {
+                        this.currentIndex++;
+                    }
+                },
+                
+                irA(dotIndex) {
+                    const targetIndex = dotIndex * this.itemsVisible;
+                    if (targetIndex <= this.maxIndex) {
+                        this.currentIndex = targetIndex;
+                    }
+                }
+            }
+        }
+
+    </script>
+</body>
+</html>

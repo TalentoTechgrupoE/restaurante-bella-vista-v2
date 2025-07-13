@@ -1,0 +1,382 @@
+= 🍽️ Frontend Usuario Setup - Bella Vista Restaurant
+:toc:
+:toc-placement: preamble
+:toclevels: 4
+:sectanchors:
+:sectlinks:
+:sectnums:
+
+== 📋 Guía de Configuración e Instalación
+
+Esta guía te ayuda a configurar y ejecutar el frontend de usuario del restaurante Bella Vista paso a paso.
+
+== 📁 Estructura del Proyecto
+
+[source]
+----
+frontend-usuario/
+├── package.json          # Dependencias y scripts de Node.js
+├── .env                  # Variables de entorno
+├── server.js             # Servidor Express principal
+├── Dockerfile            # Contenedor Docker
+├── views/                # Plantillas EJS
+│   ├── index.ejs         # Página principal (menú)
+│   ├── pedido.ejs        # Página de pedidos
+│   ├── seguimiento.ejs   # Seguimiento de pedidos
+│   └── error.ejs         # Página de errores
+└── public/               # Archivos estáticos
+    ├── css/
+    │   └── style.css     # Estilos CSS
+    └── images/           # Imágenes del restaurante
+----
+
+== 🔧 Prerrequisitos
+
+=== Sistema Operativo
+* ✅ Windows 10/11
+* ✅ macOS 10.15+
+* ✅ Linux (Ubuntu 18.04+)
+
+=== Software Requerido
+* 📦 *Node.js* v18.0+ - https://nodejs.org/[Descargar]
+* 📦 *npm* v8.0+ (incluido con Node.js)
+* 🗄️ *PostgreSQL* v13+ - https://www.postgresql.org/download/[Descargar]
+
+== 📝 Pasos de Instalación
+
+=== Paso 1: Verificar Dependencias del Sistema
+
+==== Verificar Node.js y npm
+[source,bash]
+----
+# Verificar versión de Node.js
+node --version
+
+# Verificar versión de npm
+npm --version
+
+# Verificar que PostgreSQL esté instalado
+psql --version
+----
+
+*Salida esperada:*
+[source]
+----
+v18.x.x o superior
+8.x.x o superior
+psql (PostgreSQL) 13.x o superior
+----
+
+=== Paso 2: Configurar Base de Datos PostgreSQL
+
+==== Iniciar PostgreSQL
+
+*Windows:*
+[source,powershell]
+----
+# Verificar si PostgreSQL está ejecutándose
+Get-Service postgresql*
+
+# Si no está ejecutándose, iniciarlo desde Services
+# Abrir services.msc y buscar "postgresql"
+----
+
+*Linux/macOS:*
+[source,bash]
+----
+# Verificar estado
+sudo systemctl status postgresql
+
+# Iniciar PostgreSQL
+sudo systemctl start postgresql
+
+# macOS con Homebrew
+brew services start postgresql
+----
+
+==== Crear Base de Datos y Usuario
+[source,sql]
+----
+-- Conectar como superusuario
+psql -U postgres
+
+-- Crear usuario para el restaurante
+CREATE USER restaurante WITH PASSWORD 'bella123';
+
+-- Crear base de datos
+CREATE DATABASE bella_vista OWNER restaurante;
+
+-- Otorgar permisos
+GRANT ALL PRIVILEGES ON DATABASE bella_vista TO restaurante;
+
+-- Salir
+\q
+----
+
+=== Paso 3: Inicializar Esquema de Base de Datos
+
+[source,bash]
+----
+# Ejecutar script de inicialización
+psql -U restaurante -d bella_vista -f database/init-db.sql
+
+# Ejecutar migraciones para compatibilidad
+psql -U restaurante -d bella_vista -f database/migrate-schema.sql
+----
+
+*Verificar que las tablas se crearon:*
+[source,sql]
+----
+-- Conectar a la base de datos
+psql -U restaurante -d bella_vista
+
+-- Listar tablas
+\dt
+
+-- Verificar datos de ejemplo
+SELECT * FROM categorias;
+SELECT * FROM platos LIMIT 5;
+
+-- Salir
+\q
+----
+
+=== Paso 4: Instalar Dependencias de Node.js
+
+[source,bash]
+----
+# Navegar al directorio del frontend
+cd frontend-usuario
+
+# Instalar dependencias
+npm install
+----
+
+*Dependencias instaladas:*
+* `express` - Framework web para Node.js
+* `ejs` - Motor de plantillas
+* `pg` - Cliente PostgreSQL para Node.js
+* `cors` - Middleware para CORS
+* `dotenv` - Gestión de variables de entorno
+* `ws` - WebSockets para tiempo real
+
+=== Paso 5: Verificar Configuración
+
+==== Verificar archivo .env
+[source,bash]
+----
+# Verificar que existe el archivo .env
+cat frontend-usuario/.env
+----
+
+*Contenido esperado:*
+[source,properties]
+----
+NODE_ENV=development
+PORT=3000
+
+# Database configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=bella_vista
+DB_USER=restaurante
+DB_PASSWORD=bella123
+----
+
+==== Probar Conexión a Base de Datos
+[source,bash]
+----
+# Desde el directorio frontend-usuario
+node -e "
+const { Pool } = require('pg');
+require('dotenv').config();
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+});
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.log('❌ Error:', err.message);
+  } else {
+    console.log('✅ Conexión exitosa:', res.rows[0].now);
+  }
+  process.exit();
+});
+"
+----
+
+=== Paso 6: Ejecutar el Frontend
+
+==== Modo Desarrollo (con recarga automática)
+[source,bash]
+----
+# Desde el directorio frontend-usuario
+npm run dev
+----
+
+==== Modo Producción
+[source,bash]
+----
+# Desde el directorio frontend-usuario
+npm start
+----
+
+*Salida esperada:*
+[source]
+----
+🍽️ Bella Vista Frontend Usuario ejecutándose en http://localhost:3000
+📊 Estado de la base de datos: ✅ Conectada
+📋 Rutas disponibles:
+   🏠 GET  /                    - Página principal (menú)
+   🛒 GET  /pedido              - Página de pedidos
+   📊 GET  /seguimiento/:numero - Seguimiento de pedido
+   📡 GET  /api/menu            - API del menú
+   📡 GET  /api/categorias      - API de categorías
+   📡 POST /api/pedidos         - API crear pedido
+   📡 GET  /api/pedidos/:numero - API estado pedido
+----
+
+=== Paso 7: Verificar Funcionamiento
+
+==== Abrir en Navegador
+[source,bash]
+----
+# Abrir la aplicación
+http://localhost:3000
+----
+
+==== Probar APIs
+[source,bash]
+----
+# Probar API de categorías
+curl http://localhost:3000/api/categorias
+
+# Probar API de menú
+curl http://localhost:3000/api/menu
+
+# Crear pedido de prueba
+curl -X POST http://localhost:3000/api/pedidos \
+  -H "Content-Type: application/json" \
+  -d '{
+    "numero_mesa": 1,
+    "cliente_nombre": "Test Usuario",
+    "items": [
+      {
+        "producto_id": 1,
+        "cantidad": 2,
+        "notas_item": "Sin cebolla"
+      }
+    ],
+    "notas": "Pedido de prueba"
+  }'
+----
+
+== 🐳 Ejecución con Docker (Opcional)
+
+=== Construir Imagen
+[source,bash]
+----
+# Desde el directorio frontend-usuario
+docker build -t bella-vista-frontend .
+----
+
+=== Ejecutar Contenedor
+[source,bash]
+----
+# Ejecutar contenedor
+docker run -p 3000:3000 \
+  -e DB_HOST=host.docker.internal \
+  -e DB_PORT=5432 \
+  -e DB_NAME=bella_vista \
+  -e DB_USER=restaurante \
+  -e DB_PASSWORD=bella123 \
+  bella-vista-frontend
+----
+
+== 🔧 Solución de Problemas
+
+=== Error: "Cannot connect to database"
+[source,bash]
+----
+# Verificar que PostgreSQL esté ejecutándose
+sudo systemctl status postgresql
+
+# Verificar credenciales en .env
+cat frontend-usuario/.env
+
+# Probar conexión manual
+psql -U restaurante -d bella_vista -c "SELECT 1;"
+----
+
+=== Error: "EADDRINUSE :::3000"
+[source,bash]
+----
+# Puerto 3000 ocupado, cambiar puerto
+export PORT=3001
+
+# O modificar .env
+echo "PORT=3001" >> frontend-usuario/.env
+----
+
+=== Error: "Module not found"
+[source,bash]
+----
+# Reinstalar dependencias
+cd frontend-usuario
+rm -rf node_modules package-lock.json
+npm install
+----
+
+== 📊 Scripts Disponibles
+
+[source,bash]
+----
+# Instalar dependencias
+npm install
+
+# Ejecutar en modo desarrollo
+npm run dev
+
+# Ejecutar en modo producción
+npm start
+
+# Probar estructura del proyecto
+chmod +x test-frontend.sh
+./test-frontend.sh
+----
+
+== 🌐 URLs y Endpoints
+
+=== Páginas Web
+* 🏠 *Página Principal*: http://localhost:3000/
+* 🛒 *Realizar Pedido*: http://localhost:3000/pedido
+* 📊 *Seguimiento*: http://localhost:3000/seguimiento/P000001
+
+=== APIs
+* 📡 *Categorías*: GET /api/categorias
+* 📡 *Menú*: GET /api/menu
+* 📡 *Crear Pedido*: POST /api/pedidos
+* 📡 *Estado Pedido*: GET /api/pedidos/:numero
+
+== ✅ Lista de Verificación Final
+
+* [ ] Node.js y npm instalados
+* [ ] PostgreSQL ejecutándose
+* [ ] Base de datos `bella_vista` creada
+* [ ] Usuario `restaurante` configurado
+* [ ] Tablas inicializadas con `init-db.sql`
+* [ ] Migraciones aplicadas con `migrate-schema.sql`
+* [ ] Dependencias de Node.js instaladas
+* [ ] Archivo `.env` configurado correctamente
+* [ ] Conexión a base de datos exitosa
+* [ ] Frontend ejecutándose en http://localhost:3000
+* [ ] APIs respondiendo correctamente
+
+'''
+
+*Última actualización*: Julio 6, 2025 +
+*Proyecto*: Bella Vista Restaurant +
+*Versión*: 1.0

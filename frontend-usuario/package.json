@@ -1,0 +1,23 @@
+{
+  "name": "bella-vista-frontend-usuario",
+  "version": "1.0.0",
+  "description": "Frontend de usuario para restaurante Bella Vista",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ejs": "^3.1.9",
+    "pg": "^8.11.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "author": "Bella Vista Restaurant",
+  "license": "MIT"
+}

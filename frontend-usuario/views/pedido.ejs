@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">🍽️ Bella Vista</h1>
+                <nav class="nav">
+                    <a href="/" class="nav-link">Menú</a>
+                    <a href="/pedido" class="nav-link active">Pedido</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <div class="pedido-container" x-data="pedidoApp()">
+                <h2 class="page-title">Realizar Pedido</h2>
+                
+                <!-- Order Summary -->
+                <div class="order-summary">
+                    <h3>📋 Resumen del Pedido</h3>
+                    
+                    <div x-show="carrito.length === 0" class="empty-cart">
+                        <p>Tu carrito está vacío.</p>
+                        <a href="/" class="btn btn-primary">Ir al Menú</a>
+                    </div>
+                    
+                    <div x-show="carrito.length > 0">
+                        <div class="order-items">
+                            <template x-for="item in carrito" :key="item.id">
+                                <div class="order-item">
+                                    <div class="item-details">
+                                        <h4 x-text="item.nombre"></h4>
+                                        <p class="item-price">$<span x-text="item.precio.toFixed(2)"></span> x <span x-text="item.cantidad"></span></p>
+                                    </div>
+                                    <div class="item-total">
+                                        $<span x-text="(item.precio * item.cantidad).toFixed(2)"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <div class="order-total">
+                            <strong>Total: $<span x-text="total.toFixed(2)"></span></strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Form -->
+                <div x-show="carrito.length > 0" class="customer-form">
+                    <h3>👤 Confirmar Información del Pedido</h3>
+                    
+                    <!-- Información Auto-detectada -->
+                    <div x-show="mesasEnCarrito.length > 0 || hayNotasEnCarrito" class="info-autodetectada">
+                        <div class="alert alert-info">
+                            <strong>📋 Información detectada del carrito:</strong>
+                            <div class="info-details">
+                                <div x-show="mesasEnCarrito.length === 1">
+                                    🪑 Mesa auto-detectada: <strong x-text="mesasEnCarrito[0]"></strong>
+                                </div>
+                                <div x-show="mesasEnCarrito.length > 1">
+                                    🪑 Mesas detectadas: <strong x-text="mesasEnCarrito.join(', ')"></strong>
+                                </div>
+                                <div x-show="hayNotasEnCarrito" class="mt-2">
+                                    📝 Notas de productos incluidas automáticamente
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form @submit.prevent="realizarPedido()" class="form">
+                        <!-- Mesa Principal -->
+                        <div class="form-group">
+                            <label for="numero_mesa">
+                                🪑 Mesa Principal del Pedido *
+                                <span class="field-hint">(Pre-llenada desde tu carrito)</span>
+                            </label>
+                            <div class="input-with-info">
+                                <input 
+                                    type="number" 
+                                    id="numero_mesa" 
+                                    x-model="formulario.numero_mesa"
+                                    required
+                                    min="1"
+                                    max="50"
+                                    class="form-control"
+                                    placeholder="Ej: 5"
+                                >
+                                <div x-show="mesasEnCarrito.length > 1" class="field-warning">
+                                    ⚠️ Tienes productos para múltiples mesas. Se enviará todo a la mesa indicada.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Nombre del Cliente -->
+                        <div class="form-group">
+                            <label for="cliente_nombre">
+                                👤 Nombre (Opcional)
+                                <span class="field-hint">Para personalizar tu pedido</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="cliente_nombre" 
+                                x-model="formulario.cliente_nombre"
+                                class="form-control"
+                                placeholder="Tu nombre"
+                                maxlength="100"
+                            >
+                        </div>
+                        
+                        <!-- Notas Especiales -->
+                        <div class="form-group">
+                            <label for="notas">
+                                📝 Notas del Pedido (Opcional)
+                                <span class="field-hint">Incluye notas de productos individuales</span>
+                            </label>
+                            <textarea 
+                                id="notas" 
+                                x-model="formulario.notas"
+                                class="form-control"
+                                placeholder="Notas adicionales para el pedido completo..."
+                                rows="4"
+                                maxlength="500"
+                            ></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button 
+                                type="submit" 
+                                class="btn btn-success btn-large"
+                                :disabled="enviando"
+                            >
+                                <span x-show="!enviando">🍽️ Confirmar Pedido</span>
+                                <span x-show="enviando">⏳ Enviando...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Success Message -->
+                <div x-show="pedidoExitoso" class="success-message">
+                    <div class="success-content">
+                        <h3>🎉 ¡Pedido Realizado Exitosamente!</h3>
+                        <p>Tu pedido ha sido enviado a la cocina.</p>
+                        <div class="pedido-info">
+                            <p><strong>Número de Pedido:</strong> #<span x-text="numeroPedido"></span></p>
+                            <p><strong>Mesa:</strong> <span x-text="mesaPedido"></span></p>
+                            <p><strong>Total:</strong> $<span x-text="totalPedido"></span></p>
+                        </div>
+                        <div class="success-actions">
+                            <a :href="'/seguimiento/' + numeroPedido" class="btn btn-primary">
+                                📊 Seguir Pedido
+                            </a>
+                            <button @click="nuevoPedido()" class="btn btn-secondary">
+                                🍽️ Nuevo Pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div x-show="error" class="error-message">
+                    <div class="error-content">
+                        <h3>❌ Error al Procesar Pedido</h3>
+                        <p x-text="mensajeError"></p>
+                        <button @click="error = false" class="btn btn-primary">
+                            Intentar de Nuevo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Bella Vista Restaurant. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        function pedidoApp() {
+            return {
+                carrito: JSON.parse(localStorage.getItem('carrito') || '[]'),
+                formulario: {
+                    numero_mesa: '',
+                    cliente_nombre: '',
+                    notas: ''
+                },
+                enviando: false,
+                pedidoExitoso: false,
+                error: false,
+                mensajeError: '',
+                numeroPedido: '',
+                mesaPedido: '',
+                totalPedido: '',
+                
+                init() {
+                    // Auto-llenar la mesa más común en el carrito
+                    this.autoLlenarMesa();
+                    // Auto-compilar notas de los items
+                    this.autoLlenarNotas();
+                },
+                
+                autoLlenarMesa() {
+                    if (this.carrito.length === 0) return;
+                    
+                    // Encontrar la mesa más común en el carrito
+                    const mesas = this.carrito
+                        .map(item => item.mesa)
+                        .filter(mesa => mesa && mesa !== '' && mesa !== 'undefined' && mesa !== 'null');
+                    
+                    if (mesas.length === 0) return;
+                    
+                    const mesaFrecuencia = {};
+                    
+                    mesas.forEach(mesa => {
+                        mesaFrecuencia[mesa] = (mesaFrecuencia[mesa] || 0) + 1;
+                    });
+                    
+                    // Obtener la mesa con mayor frecuencia
+                    const mesaMasComun = Object.keys(mesaFrecuencia).reduce((a, b) => 
+                        mesaFrecuencia[a] > mesaFrecuencia[b] ? a : b
+                    );
+                    
+                    this.formulario.numero_mesa = mesaMasComun;
+                },
+                
+                autoLlenarNotas() {
+                    // Compilar todas las notas especiales de los items
+                    const notasItems = this.carrito
+                        .filter(item => item.notas && item.notas.trim())
+                        .map(item => `• ${item.nombre}: ${item.notas}`)
+                        .join('\n');
+                    
+                    if (notasItems) {
+                        this.formulario.notas = `Notas por producto:\n${notasItems}\n\nNotas adicionales:`;
+                    }
+                },
+                
+                get mesasEnCarrito() {
+                    // Obtener lista única de mesas en el carrito, filtrando valores inválidos
+                    const mesas = [...new Set(this.carrito
+                        .map(item => item.mesa)
+                        .filter(mesa => mesa && mesa !== '' && mesa !== 'undefined' && mesa !== 'null')
+                    )];
+                    return mesas.sort((a, b) => parseInt(a) - parseInt(b));
+                },
+                
+                get hayNotasEnCarrito() {
+                    return this.carrito.some(item => item.notas && item.notas.trim());
+                },
+                
+                get total() {
+                    return this.carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+                },
+                
+                async realizarPedido() {
+                    if (this.carrito.length === 0) {
+                        this.mostrarError('El carrito está vacío');
+                        return;
+                    }
+                    
+                    if (!this.formulario.numero_mesa) {
+                        this.mostrarError('El número de mesa es requerido');
+                        return;
+                    }
+                    
+                    this.enviando = true;
+                    this.error = false;
+                    
+                    try {
+                        // Preparar items del pedido
+                        const items = this.carrito.map(item => ({
+                            producto_id: item.id,
+                            cantidad: item.cantidad,
+                            notas_item: ''
+                        }));
+                        
+                        // Enviar pedido
+                        const response = await fetch('/api/pedidos', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                numero_mesa: parseInt(this.formulario.numero_mesa),
+                                cliente_nombre: this.formulario.cliente_nombre,
+                                notas: this.formulario.notas,
+                                items: items
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Pedido exitoso
+                            this.numeroPedido = data.pedido.numero_pedido;
+                            this.mesaPedido = this.formulario.numero_mesa;
+                            this.totalPedido = data.pedido.total.toFixed(2);
+                            this.pedidoExitoso = true;
+                            
+                            // Limpiar carrito
+                            localStorage.removeItem('carrito');
+                            this.carrito = [];
+                            
+                            // Limpiar formulario
+                            this.formulario = {
+                                numero_mesa: '',
+                                cliente_nombre: '',
+                                notas: ''
+                            };
+                        } else {
+                            this.mostrarError(data.message || 'Error al procesar el pedido');
+                        }
+                        
+                    } catch (error) {
+                        console.error('Error enviando pedido:', error);
+                        this.mostrarError('Error de conexión. Intenta de nuevo.');
+                    } finally {
+                        this.enviando = false;
+                    }
+                },
+                
+                mostrarError(mensaje) {
+                    this.mensajeError = mensaje;
+                    this.error = true;
+                },
+                
+                nuevoPedido() {
+                    this.pedidoExitoso = false;
+                    window.location.href = '/';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

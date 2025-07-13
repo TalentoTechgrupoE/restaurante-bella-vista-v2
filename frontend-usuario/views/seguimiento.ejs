@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">🍽️ Bella Vista</h1>
+                <nav class="nav">
+                    <a href="/" class="nav-link">Menú</a>
+                    <a href="/pedido" class="nav-link">Pedido</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <div class="seguimiento-container">
+                <h2 class="page-title">📊 Seguimiento de Pedido</h2>
+                
+                <div class="pedido-card">
+                    <div class="pedido-header">
+                        <h3>Pedido #<%= pedido.numero_pedido %></h3>
+                        <div class="estado-badge estado-<%= pedido.estado %>">
+                            <%= pedido.estado.toUpperCase() %>
+                        </div>
+                    </div>
+                    
+                    <div class="pedido-info">
+                        <div class="info-item">
+                            <strong>👤 Cliente:</strong> <%= pedido.cliente_nombre || 'Cliente' %>
+                        </div>
+                        <div class="info-item">
+                            <strong>🪑 Mesa:</strong> <%= pedido.numero_mesa %>
+                        </div>
+                        <div class="info-item">
+                            <strong>💰 Total:</strong> $<%= pedido.total.toFixed(2) %>
+                        </div>
+                        <div class="info-item">
+                            <strong>🕐 Pedido:</strong> <%= new Date(pedido.created_at).toLocaleString('es-ES') %>
+                        </div>
+                        <% if (pedido.updated_at !== pedido.created_at) { %>
+                        <div class="info-item">
+                            <strong>🔄 Actualizado:</strong> <%= new Date(pedido.updated_at).toLocaleString('es-ES') %>
+                        </div>
+                        <% } %>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-step <%= pedido.estado === 'pendiente' || pedido.estado === 'preparando' || pedido.estado === 'listo' || pedido.estado === 'entregado' ? 'active' : '' %>">
+                                <div class="step-icon">📝</div>
+                                <div class="step-label">Pendiente</div>
+                            </div>
+                            <div class="progress-line <%= pedido.estado === 'preparando' || pedido.estado === 'listo' || pedido.estado === 'entregado' ? 'active' : '' %>"></div>
+                            <div class="progress-step <%= pedido.estado === 'preparando' || pedido.estado === 'listo' || pedido.estado === 'entregado' ? 'active' : '' %>">
+                                <div class="step-icon">👨‍🍳</div>
+                                <div class="step-label">Preparando</div>
+                            </div>
+                            <div class="progress-line <%= pedido.estado === 'listo' || pedido.estado === 'entregado' ? 'active' : '' %>"></div>
+                            <div class="progress-step <%= pedido.estado === 'listo' || pedido.estado === 'entregado' ? 'active' : '' %>">
+                                <div class="step-icon">✅</div>
+                                <div class="step-label">Listo</div>
+                            </div>
+                            <div class="progress-line <%= pedido.estado === 'entregado' ? 'active' : '' %>"></div>
+                            <div class="progress-step <%= pedido.estado === 'entregado' ? 'active' : '' %>">
+                                <div class="step-icon">🍽️</div>
+                                <div class="step-label">Entregado</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Items del Pedido -->
+                    <div class="pedido-items">
+                        <h4>📋 Items del Pedido</h4>
+                        <div class="items-list">
+                            <% pedido.items.forEach(function(item) { %>
+                                <% if (item.producto) { %>
+                                <div class="item-row">
+                                    <div class="item-info">
+                                        <span class="item-name"><%= item.producto %></span>
+                                        <% if (item.notas) { %>
+                                            <small class="item-notes">Nota: <%= item.notas %></small>
+                                        <% } %>
+                                    </div>
+                                    <div class="item-quantity">x<%= item.cantidad %></div>
+                                    <div class="item-price">$<%= (item.precio * item.cantidad).toFixed(2) %></div>
+                                </div>
+                                <% } %>
+                            <% }); %>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="pedido-actions">
+                        <button onclick="window.location.reload()" class="btn btn-primary">
+                            🔄 Actualizar Estado
+                        </button>
+                        <a href="/" class="btn btn-secondary">
+                            🏠 Volver al Menú
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Bella Vista Restaurant. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Auto-refresh script -->
+    <script>
+        // Auto-refresh cada 30 segundos para actualizar el estado
+        setInterval(() => {
+            window.location.reload();
+        }, 30000);
+        
+        // Mostrar notificaciones de cambio de estado
+        function checkEstado() {
+            const estadoActual = '<%= pedido.estado %>';
+            
+            if (estadoActual === 'listo') {
+                // Mostrar notificación especial cuando esté listo
+                if (!localStorage.getItem('notificado_<%= pedido.numero_pedido %>')) {
+                    alert('🎉 ¡Tu pedido está listo! Puedes pasar a recogerlo.');
+                    localStorage.setItem('notificado_<%= pedido.numero_pedido %>', 'true');
+                }
+            }
+        }
+        
+        // Ejecutar al cargar la página
+        document.addEventListener('DOMContentLoaded', checkEstado);
+    </script>
+</body>
+</html>

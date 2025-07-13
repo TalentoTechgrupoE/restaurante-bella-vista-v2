@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">🍽️ Bella Vista</h1>
+                <nav class="nav">
+                    <a href="/" class="nav-link">Menú</a>
+                    <a href="/pedido" class="nav-link">Pedido</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <div class="error-container">
+                <div class="error-card">
+                    <div class="error-icon">❌</div>
+                    <h2 class="error-title"><%= title %></h2>
+                    <p class="error-message"><%= message %></p>
+                    
+                    <div class="error-actions">
+                        <a href="/" class="btn btn-primary">🏠 Volver al Inicio</a>
+                        <button onclick="history.back()" class="btn btn-secondary">↩️ Volver Atrás</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Bella Vista Restaurant. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</body>
+</html>
