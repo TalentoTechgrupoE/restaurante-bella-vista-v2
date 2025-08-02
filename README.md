@@ -3,17 +3,6 @@
 **Sistema de pedidos moderno con monitoreo avanzado - Ultra 2025**
 
 ![Estado](https://img.shields.io/badge/Estado-Completado-brightgreen)
-![Versión](https://img.shields.io/badg├── 📁 monitoring/                    # 📊 Sistema de monitoreo
-│   ├── 📁 grafana/                  # Configuración Grafana
-│   │   ├── 📁 dashboards/           # Dashboards JSON
-│   │   └── 📁 provisioning/         # Configuración automática
-│   ├── 📁 prometheus/               # Configuración Prometheus
-│   │   └── 📄 prometheus.yml        # Configuración de métricas
-│   └── 📄 README.md                 # Documentación monitoreo
-│
-├── 📁 scripts/                       # 🤖 Scripts de automatización
-│   ├── 📄 setup-monitoring.sh       # Configuración automática
-│   └── 📄 generate-metrics.sh       # Generador de métricas.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![Monitoreo](https://img.shields.io/badge/Monitoring-Prometheus%2BGrafana-orange)
 
