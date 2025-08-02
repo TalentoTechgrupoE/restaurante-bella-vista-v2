@@ -42,9 +42,9 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 15s
 
-  # Custom Restaurant Metrics
-  - job_name: 'restaurante-backend'
+  # Restaurant Application Metrics
+  - job_name: 'restaurante-app'
     static_configs:
-      - targets: ['backend-api:8080']
+      - targets: ['bella-vista-frontend-usuario:3000']
     metrics_path: '/metrics'
     scrape_interval: 15s

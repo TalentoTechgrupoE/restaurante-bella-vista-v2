@@ -17,6 +17,9 @@ cd restaurante-bella-vista
 
 # 2. Ejecutar despliegue completo automático
 ./setup-complete.sh
+
+# 3. Verificar que todo funcione (opcional)
+./scripts/verify-monitoring.sh
 ```
 
 **¡Listo en menos de 5 minutos!** El sistema estará disponible en:

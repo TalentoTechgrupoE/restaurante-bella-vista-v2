@@ -195,6 +195,11 @@ start_monitoring() {
     print_status "Levantando servicios de monitoreo..."
     docker-compose -f docker-compose.monitoring.yml up -d
     
+    print_status "Conectando servicios a la red de monitoreo..."
+    # Asegurar que todos los servicios estén en la misma red para conectividad
+    docker network connect restaurante-network bella-vista-frontend-usuario 2>/dev/null || true
+    docker network connect restaurante-network bella-vista-postgres 2>/dev/null || true
+    
     print_status "Esperando que los servicios de monitoreo estén listos..."
     sleep 20
     
@@ -481,6 +486,12 @@ generate_test_data() {
 
 # Función para mostrar resumen final
 show_summary() {
+    # Verificación automática de conectividad
+    print_status "Ejecutando verificación final de conectividad..."
+    if [ -f "scripts/verify-monitoring.sh" ]; then
+        bash scripts/verify-monitoring.sh || print_warning "⚠️ Algunas verificaciones fallaron, pero el sistema debería funcionar"
+    fi
+    
     print_step "8" "¡Setup completado!"
     
     echo ""
