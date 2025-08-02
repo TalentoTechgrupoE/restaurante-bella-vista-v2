@@ -1,12 +1,11 @@
-# 🍽️ Restaurante Bella Vista 2.0 - Edición Monitoreo Avanzado
+# 🍽️ Restaurante Bella Vista
 
-**Sistema de pedidos moderno con monitoreo profesional completo - 2025**
+**Sistema de pedidos moderno con monitoreo avanzado - Ultra 2025**
 
 ![Estado](https://img.shields.io/badge/Estado-Completado-brightgreen)
 ![Versión](https://img.shields.io/badge/Versión-2.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![Monitoreo](https://img.shields.io/badge/Monitoring-Prometheus%2BGrafana-orange)
-![ROI](https://img.shields.io/badge/ROI-368%25-green)
 
 ## 🚀 Inicio Ultra Rápido
 
@@ -14,7 +13,7 @@
 
 ```bash
 # 1. Clonar repositorio
-git clone https://github.com/TU_USUARIO/restaurante-bella-vista.git
+git clone https://github.com/TalentoTechGrupoE/restaurante-bella-vista.git
 cd restaurante-bella-vista
 
 # 2. Ejecutar despliegue completo automático
@@ -102,7 +101,7 @@ docker-compose up -d --build
 ### Instalación Completa (Recomendada)
 ```bash
 # 1. Clonar proyecto
-git clone https://github.com/TU_USUARIO/restaurante-bella-vista.git
+git clone https://github.com/TalentoTechGrupoE/restaurante-bella-vista.git
 
 # 2. Entrar al directorio
 cd restaurante-bella-vista
@@ -258,15 +257,25 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 
 ## 👥 Equipo
 
-**Equipo de Desarrollo Bella Vista**
-- Desarrollo y diseño: Equipo técnico
-- Fecha de finalización: 13 de Julio, 2025
+**Equipo de Desarrollo Bella Vista - Talento Tech Grupo E**
+
+**👨‍💼 Autores del Proyecto:**
+- 🏗️ **Jesús Gil** - Arquitecto de Software
+- 👨‍💻 **César Sáenz** - Desarrollador Backend
+- 👨‍💻 **Brandon Torre** - Desarrollador Frontend
+
+**📧 Contacto Oficial:** talentotechgrupoe@gmail.com  
+**🐙 GitHub:** https://github.com/TalentoTechGrupoE/restaurante-bella-vista.git  
+**📅 Fecha de finalización:** 13 de Julio, 2025
 
 ## 📞 Soporte
 
 Para reportar bugs o solicitar features:
-- 🐛 [Issues](https://github.com/TU_USUARIO/restaurante-bella-vista/issues)
-- 📧 Email: dev@bellavista.com
+- 🐛 [Issues](https://github.com/TalentoTechGrupoE/restaurante-bella-vista/issues)
+- 📧 Email: talentotechgrupoe@gmail.com
+- 🐙 GitHub: https://github.com/TalentoTechGrupoE/restaurante-bella-vista.git
+
+**Desarrollado por Talento Tech Grupo E**
 
 ---
 
@@ -274,3 +283,10 @@ Para reportar bugs o solicitar features:
 
 **Fecha de release**: 13 de Julio, 2025  
 **Estado**: ✅ Producción Ready
+
+---
+
+### 👨‍💻 **Desarrollado con ❤️ por Talento Tech Grupo E**
+**Autores:** Jesús Gil, César Sáenz, Brandon Torre  
+**GitHub:** https://github.com/TalentoTechGrupoE/restaurante-bella-vista.git  
+**Email:** talentotechgrupoe@gmail.com
