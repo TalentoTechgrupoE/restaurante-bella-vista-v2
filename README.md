@@ -1,11 +1,12 @@
-# 🍽️ Restaurante Bella Vista
+# 🍽️ Restaurante Bella Vista 2.0 - Edición Monitoreo Avanzado
 
-**Sistema de pedidos moderno con monitoreo avanzado - Ultra 2025**
+**Sistema de pedidos moderno con monitoreo profesional completo - 2025**
 
 ![Estado](https://img.shields.io/badge/Estado-Completado-brightgreen)
 ![Versión](https://img.shields.io/badge/Versión-2.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![Monitoreo](https://img.shields.io/badge/Monitoring-Prometheus%2BGrafana-orange)
+![ROI](https://img.shields.io/badge/ROI-368%25-green)
 
 ## 🚀 Inicio Ultra Rápido
 
