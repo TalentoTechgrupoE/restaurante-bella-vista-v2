@@ -3,7 +3,17 @@
 **Sistema de pedidos moderno con monitoreo avanzado - Ultra 2025**
 
 ![Estado](https://img.shields.io/badge/Estado-Completado-brightgreen)
-![Versión](https://img.shields.io/badge/Versión-2.0-blue)
+![Versión](https://img.shields.io/badg├── 📁 monitoring/                    # 📊 Sistema de monitoreo
+│   ├── 📁 grafana/                  # Configuración Grafana
+│   │   ├── 📁 dashboards/           # Dashboards JSON
+│   │   └── 📁 provisioning/         # Configuración automática
+│   ├── 📁 prometheus/               # Configuración Prometheus
+│   │   └── 📄 prometheus.yml        # Configuración de métricas
+│   └── 📄 README.md                 # Documentación monitoreo
+│
+├── 📁 scripts/                       # 🤖 Scripts de automatización
+│   ├── 📄 setup-monitoring.sh       # Configuración automática
+│   └── 📄 generate-metrics.sh       # Generador de métricas.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![Monitoreo](https://img.shields.io/badge/Monitoring-Prometheus%2BGrafana-orange)
 
@@ -197,18 +207,74 @@ http://localhost:3000
 
 ```
 restaurante-bella-vista/
-├── 📁 frontend-usuario/          # Frontend principal
-│   ├── 📁 public/css/           # Estilos modernos
-│   ├── 📁 views/                # Templates EJS
-│   ├── 📄 server.js             # Servidor Express
-│   └── 📄 Dockerfile            # Imagen Docker
-├── 📁 database/                  # Base de datos
-│   └── 📄 init-db.sql           # Esquema y datos
-├── 📁 documentacion/             # Documentación técnica
-├── 📄 docker-compose.yml        # Configuración Docker
-├── 📄 start.sh                  # Script de inicio
-└── 📄 README.md                 # Este archivo
+├── 📁 frontend-usuario/              # 🎨 Frontend principal
+│   ├── 📁 public/css/               # Estilos modernos
+│   ├── 📁 views/                    # Templates EJS
+│   ├── � routes/                   # Rutas del servidor
+│   ├── �📄 server.js                 # Servidor Express con métricas
+│   ├── 📄 package.json              # Dependencias Node.js
+│   ├── 📄 Dockerfile                # Imagen Docker
+│   └── 📄 test-frontend.sh          # Tests automatizados
+│
+├── 📁 database/                      # 🗄️ Base de datos
+│   ├── 📄 init-db.sql               # Esquema y datos iniciales
+│   └── 📄 migrate-schema.sql        # Migraciones
+│
+├── 📁 monitoring/                    # 📊 Sistema de monitoreo v2.0
+│   ├── 📁 grafana/                  # Configuración Grafana
+│   │   ├── 📁 dashboards/           # Dashboards JSON
+│   │   └── 📁 provisioning/         # Configuración automática
+│   ├── 📁 prometheus/               # Configuración Prometheus
+│   │   └── 📄 prometheus.yml        # Configuración de métricas
+│   └── 📄 README.md                 # Documentación monitoreo
+│
+├── 📁 scripts/                       # 🤖 Automatización v2.0
+│   ├── � setup-monitoring.sh       # Configuración automática
+│   └── 📄 generate-metrics.sh       # Generador de métricas
+│
+├── �📁 documentacion/                 # 📚 Documentación completa
+│   ├── 📄 README.md                 # Guía principal
+│   ├── 📄 README-FINAL.md           # Documentación final
+│   ├── 📄 RESUMEN-TECNICO.md        # Especificaciones técnicas
+│   ├── 📄 base-de-datos.md          # Esquema de BD
+│   └── 📄 variables-entorno.md      # Variables de configuración
+│
+├── 📄 docker-compose.yml            # 🐳 Configuración principal
+├── 📄 docker-compose.monitoring.yml # 📊 Stack de monitoreo
+├── 📄 .env.example                  # 🔧 Variables de entorno
+├── 📄 .gitignore                    # 📝 Archivos ignorados
+│
+├── 🚀 SCRIPTS DE AUTOMATIZACIÓN:
+├── 📄 setup-complete.sh             # ⚡ Despliegue completo automático
+├── 📄 validate-env.sh               # ✅ Validación de entorno
+├── 📄 cleanup.sh                    # 🧹 Limpieza del sistema
+├── 📄 start-restaurante.sh          # 🎯 Iniciador inteligente
+├── 📄 test-metrics.sh               # 📈 Tester de métricas
+├── 📄 live-traffic.sh               # 🔄 Simulador de tráfico
+│
+├── 📊 DASHBOARDS DE TRABAJO:
+├── 📄 dashboard-working.json        # Dashboard en desarrollo
+├── 📄 dashboard-temp.json           # Dashboard temporal
+├── 📄 dashboard-simple.json         # Dashboard simple
+│
+├── 📖 DOCUMENTACIÓN:
+├── 📄 DEPLOY.md                     # 🚀 Guía de despliegue
+├── 📄 MIGRACION-V2.md               # 🔄 Guía de migración
+├── 📄 PROYECTO_COMPLETADO.md        # ✅ Estado del proyecto
+├── 📄 LICENSE                       # 📜 Licencia MIT
+├── 📄 README.md                     # 📋 Este archivo
+└── 📄 start.sh                      # 🏁 Script de inicio legacy
 ```
+
+### 🎯 **Características Principales del Sistema:**
+
+| Componente | Función | Descripción |
+|------------|---------|-------------|
+| `setup-complete.sh` | 🚀 Despliegue automático | Instalación completa en un comando |
+| `validate-env.sh` | ✅ Validación de entorno | Verificación de dependencias |
+| `cleanup.sh` | 🧹 Limpieza del sistema | Eliminación segura de datos |
+| `monitoring/` | 📊 Stack de monitoreo | Prometheus + Grafana completo |
+| `DEPLOY.md` | � Guía de despliegue | Instrucciones paso a paso |
 
 ## 🔧 Comandos Útiles
 
