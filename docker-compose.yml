@@ -21,6 +21,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # Etiquetas para identificación en monitoreo
+    labels:
+      - "monitoring.enable=true"
+      - "monitoring.job=postgres"
 
   # Frontend Usuario
   frontend-usuario:
@@ -35,12 +39,19 @@ services:
       DB_NAME: bella_vista
       DB_USER: restaurante
       DB_PASSWORD: bella123
+      # Habilitar métricas para monitoreo
+      ENABLE_METRICS: "true"
+      METRICS_PORT: "3000"
     networks:
       - restaurante-network
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
+    # Etiquetas para identificación en monitoreo
+    labels:
+      - "monitoring.enable=true"
+      - "monitoring.job=restaurante-frontend"
 
 volumes:
   postgres_data:

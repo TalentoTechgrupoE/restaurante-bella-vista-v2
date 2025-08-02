@@ -26,6 +26,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Variables para métricas
+let metrics = {
+    requests_total: 0,
+    menu_views: 0,
+    orders_submitted: 0,
+    errors_total: 0,
+    uptime_start: Date.now()
+};
+
+// Middleware para contar requests
+app.use((req, res, next) => {
+    metrics.requests_total++;
+    next();
+});
+
 // Función para probar conexión a BD
 async function testConnection() {
     try {
@@ -44,6 +59,7 @@ async function testConnection() {
 
 // Página principal - Menú
 app.get('/', async (req, res) => {
+    metrics.menu_views++; // Contador de vistas del menú
     try {
         // Intentar obtener datos de la base de datos
         const client = await pool.connect();
@@ -104,6 +120,7 @@ app.get('/', async (req, res) => {
         }
         
     } catch (error) {
+        metrics.errors_total++; // Contador de errores
         console.error('Error obteniendo menú:', error);
         
         // Fallback a datos de demostración
@@ -272,6 +289,7 @@ app.get('/pedido', (req, res) => {
 
 // API - Crear pedido
 app.post('/api/pedidos', async (req, res) => {
+    metrics.orders_submitted++; // Contador de pedidos enviados
     const client = await pool.connect();
     
     try {
@@ -511,6 +529,82 @@ const menuDemo = {
         { id: 15, nombre: "Café Espresso Premium", descripcion: "Café de origen único, tostado artesanalmente", precio: 4.00, categoria_id: 5, imagen: "☕", destacado: true }
     ]
 };
+
+// Endpoint de métricas para Prometheus
+app.get('/metrics', async (req, res) => {
+    try {
+        const uptime_seconds = Math.floor((Date.now() - metrics.uptime_start) / 1000);
+        
+        // Obtener estadísticas de la base de datos
+        let total_orders = 0;
+        let total_revenue = 0;
+        let db_connections = 0;
+        
+        try {
+            const client = await pool.connect();
+            
+            // Contar pedidos
+            const ordersResult = await client.query('SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as revenue FROM pedidos');
+            total_orders = parseInt(ordersResult.rows[0].count) || 0;
+            total_revenue = parseFloat(ordersResult.rows[0].revenue) || 0;
+            
+            // Contar conexiones activas
+            const connResult = await client.query('SELECT COUNT(*) as count FROM pg_stat_activity WHERE state = $1', ['active']);
+            db_connections = parseInt(connResult.rows[0].count) || 0;
+            
+            client.release();
+        } catch (dbError) {
+            console.error('Error obteniendo métricas de BD:', dbError);
+            metrics.errors_total++;
+        }
+        
+        // Generar métricas en formato Prometheus
+        const prometheusMetrics = `# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total ${metrics.requests_total}
+
+# HELP menu_views_total Total number of menu page views
+# TYPE menu_views_total counter
+menu_views_total ${metrics.menu_views}
+
+# HELP orders_submitted_total Total number of orders submitted
+# TYPE orders_submitted_total counter
+orders_submitted_total ${metrics.orders_submitted}
+
+# HELP orders_total Total number of orders in database
+# TYPE orders_total gauge
+orders_total ${total_orders}
+
+# HELP revenue_total Total revenue in euros
+# TYPE revenue_total gauge
+revenue_total ${total_revenue}
+
+# HELP database_connections_active Active database connections
+# TYPE database_connections_active gauge
+database_connections_active ${db_connections}
+
+# HELP errors_total Total number of errors
+# TYPE errors_total counter
+errors_total ${metrics.errors_total}
+
+# HELP uptime_seconds Application uptime in seconds
+# TYPE uptime_seconds gauge
+uptime_seconds ${uptime_seconds}
+
+# HELP nodejs_version_info Node.js version information
+# TYPE nodejs_version_info gauge
+nodejs_version_info{version="${process.version}"} 1
+`;
+
+        res.set('Content-Type', 'text/plain');
+        res.send(prometheusMetrics);
+        
+    } catch (error) {
+        console.error('Error generando métricas:', error);
+        metrics.errors_total++;
+        res.status(500).send('Error generando métricas');
+    }
+});
 
 // Manejo de errores 404
 app.use((req, res) => {

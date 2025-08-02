@@ -1,0 +1,119 @@
+groups:
+  - name: restaurante_alerts
+    rules:
+      # Alertas de Negocio
+      - alert: IngresosbajosDiarios
+        expr: restaurante_ingresos_euros < 500
+        for: 1h
+        labels:
+          severity: warning
+          team: management
+        annotations:
+          summary: "Ingresos diarios por debajo del objetivo"
+          description: "Los ingresos del día ({{ $value }}€) están por debajo del objetivo mínimo de 500€"
+
+      - alert: CocinasSaturada
+        expr: restaurante_pedidos_activos > 20
+        for: 5m
+        labels:
+          severity: critical
+          team: kitchen
+        annotations:
+          summary: "Cocina saturada con demasiados pedidos"
+          description: "La cocina tiene {{ $value }} pedidos activos, necesita atención inmediata"
+
+      - alert: PedidosRetrasados
+        expr: count(restaurante_pedidos_duracion_segundos > 1800) > 3
+        for: 2m
+        labels:
+          severity: warning
+          team: operations
+        annotations:
+          summary: "Múltiples pedidos retrasados"
+          description: "Hay {{ $value }} pedidos con más de 30 minutos de espera"
+
+      - alert: MesasOcupadasMaximo
+        expr: restaurante_mesas_ocupadas >= 18
+        for: 1m
+        labels:
+          severity: info
+          team: operations
+        annotations:
+          summary: "Restaurante casi lleno"
+          description: "{{ $value }} de 20 mesas están ocupadas, preparar lista de espera"
+
+  - name: technical_alerts
+    rules:
+      # Alertas Técnicas
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "Servicio {{ $labels.job }} está caído"
+          description: "El servicio {{ $labels.job }} en {{ $labels.instance }} no responde"
+
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Uso de memoria alto en {{ $labels.name }}"
+          description: "El contenedor {{ $labels.name }} está usando {{ $value }}% de memoria"
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Uso de CPU alto en {{ $labels.name }}"
+          description: "El contenedor {{ $labels.name }} está usando {{ $value }}% de CPU"
+
+      - alert: DatabaseConnectionsHigh
+        expr: pg_stat_database_numbackends > 80
+        for: 2m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Conexiones a PostgreSQL altas"
+          description: "PostgreSQL tiene {{ $value }} conexiones activas, cerca del límite"
+
+      - alert: HighErrorRate
+        expr: rate(restaurante_errores_total[5m]) > 5
+        for: 2m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "Tasa de errores alta"
+          description: "La aplicación está generando {{ $value }} errores por minuto"
+
+  - name: financial_alerts
+    rules:
+      # Alertas Financieras
+      - alert: ErroresPagoAltos
+        expr: (rate(restaurante_errores_pago_total[1h]) / rate(restaurante_pagos_total[1h])) * 100 > 5
+        for: 10m
+        labels:
+          severity: warning
+          team: finance
+        annotations:
+          summary: "Tasa de errores de pago alta"
+          description: "{{ $value }}% de los pagos están fallando en la última hora"
+
+      - alert: TicketPromediBajo
+        expr: restaurante_ingresos_euros / sum(restaurante_pedidos_total) < 15
+        for: 30m
+        labels:
+          severity: info
+          team: management
+        annotations:
+          summary: "Ticket promedio bajo"
+          description: "El ticket promedio es de {{ $value }}€, considerar estrategias de upselling"

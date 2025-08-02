@@ -1,0 +1,211 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "✅ Bella Vista - FUNCIONANDO",
+    "tags": ["restaurante", "working"],
+    "timezone": "",
+    "refresh": "5s",
+    "time": {
+      "from": "now-5m",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "📊 HTTP Requests Total",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "http_requests_total{job=\"restaurante-frontend\"}",
+            "refId": "A",
+            "legendFormat": "Total Requests"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        }
+      },
+      {
+        "id": 2,
+        "title": "🍽️ Menu Views Total",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "menu_views_total{job=\"restaurante-frontend\"}",
+            "refId": "A",
+            "legendFormat": "Menu Views"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "blue",
+                  "value": null
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        }
+      },
+      {
+        "id": 3,
+        "title": "💰 Revenue Total",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "revenue_total{job=\"restaurante-frontend\"}",
+            "refId": "A",
+            "legendFormat": "Revenue"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "currencyEUR"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 12,
+          "y": 0
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        }
+      },
+      {
+        "id": 4,
+        "title": "📦 Orders Total",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "orders_total{job=\"restaurante-frontend\"}",
+            "refId": "A",
+            "legendFormat": "Orders"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "orange",
+                  "value": null
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 18,
+          "y": 0
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        }
+      },
+      {
+        "id": 5,
+        "title": "📈 HTTP Requests - Últimos 5 minutos",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "http_requests_total{job=\"restaurante-frontend\"}",
+            "refId": "A",
+            "legendFormat": "Requests Acumulados"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisPlacement": "auto",
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "showPoints": "auto",
+              "spanNulls": false
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 8
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}
