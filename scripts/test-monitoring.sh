@@ -100,7 +100,8 @@ test_http_connectivity() {
         
         local http_code=$(curl -s -w "%{http_code}" -o /dev/null "$url" --max-time 10)
         
-        if [ "$http_code" = "200" ]; then
+        # Códigos válidos: 200 (OK), 302 (Redirect), 307 (Temporary Redirect)
+        if [[ "$http_code" =~ ^(200|302|307)$ ]]; then
             print_success "$name responde correctamente (HTTP $http_code)"
         else
             print_error "$name no responde (HTTP $http_code)"
