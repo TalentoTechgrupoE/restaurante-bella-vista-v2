@@ -60,174 +60,40 @@ async function testConnection() {
 // Página principal - Menú
 app.get('/', async (req, res) => {
     metrics.menu_views++; // Contador de vistas del menú
-    try {
-        // Intentar obtener datos de la base de datos
-        const client = await pool.connect();
-        
-        try {
-            // Obtener categorías
-            const categoriasResult = await client.query(`
-                SELECT id, nombre, descripcion 
-                FROM categorias 
-                WHERE activo = true 
-                ORDER BY id
-            `);
-            
-            // Obtener platos
-            const platosResult = await client.query(`
-                SELECT id, nombre, descripcion, precio, categoria_id, imagen_url, disponible, tiempo_preparacion
-                FROM platos 
-                WHERE disponible = true 
-                ORDER BY categoria_id, nombre
-            `);
-            
-            const categorias = categoriasResult.rows;
-            const productos = platosResult.rows;
-            
-            // Si no hay datos en BD, usar datos de demostración
-            if (categorias.length === 0 || productos.length === 0) {
-                console.log('⚠️ No hay datos en BD, usando datos de demostración');
-                const categoriasDemo = menuDemo.categorias;
-                const productosDemo = menuDemo.platos;
-                const destacadosDemo = productosDemo.filter(p => p.destacado);
-                
-                client.release();
-                return res.render('index', {
-                    title: 'Bella Vista - Menú',
-                    categorias: categoriasDemo,
-                    productos: productosDemo,
-                    destacados: destacadosDemo,
-                    usandoDatosDemo: true
-                });
-            }
-            
-            // Simular destacados (primeros 6 platos)
-            const destacados = productos.slice(0, 6);
-            
-            client.release();
-            
-            res.render('index', {
-                title: 'Bella Vista - Menú',
-                categorias: categorias,
-                productos: productos,
-                destacados: destacados,
-                usandoDatosDemo: false
-            });
-            
-        } catch (dbError) {
-            client.release();
-            throw dbError;
-        }
-        
-    } catch (error) {
-        metrics.errors_total++; // Contador de errores
-        console.error('Error obteniendo menú:', error);
-        
-        // Fallback a datos de demostración
-        console.log('🔄 Fallback: usando datos de demostración');
-        const categorias = menuDemo.categorias;
-        const productos = menuDemo.platos;
-        const destacados = productos.filter(p => p.destacado);
-        
-        res.render('index', {
-            title: 'Bella Vista - Menú',
-            categorias: categorias,
-            productos: productos,
-            destacados: destacados,
-            usandoDatosDemo: true
-        });
-    }
+    
+    // FORZAR DATOS DEMO PARA MOSTRAR IMÁGENES
+    console.log('🖼️ Forzando uso de datos de demostración con imágenes');
+    const categoriasDemo = menuDemo.categorias;
+    const productosDemo = menuDemo.platos;
+    const destacadosDemo = productosDemo.filter(p => p.destacado);
+    
+    return res.render('index', {
+        title: 'Bella Vista - Menú',
+        categorias: categoriasDemo,
+        productos: productosDemo,
+        destacados: destacadosDemo,
+        usandoDatosDemo: true
+    });
 });
 
 // API - Obtener menú
 app.get('/api/menu', async (req, res) => {
-    try {
-        const categoria = req.query.categoria;
-        
-        // Intentar obtener datos de la base de datos
-        const client = await pool.connect();
-        
-        try {
-            // Obtener categorías
-            const categoriasResult = await client.query(`
-                SELECT id, nombre, descripcion 
-                FROM categorias 
-                WHERE activo = true 
-                ORDER BY id
-            `);
-            
-            // Construir query para platos con filtro opcional por categoría
-            let platosQuery = `
-                SELECT id, nombre, descripcion, precio, categoria_id, imagen_url, disponible, tiempo_preparacion
-                FROM platos 
-                WHERE disponible = true
-            `;
-            let queryParams = [];
-            
-            if (categoria && categoria !== 'null' && categoria !== 'undefined') {
-                platosQuery += ` AND categoria_id = $1`;
-                queryParams.push(categoria);
-            }
-            
-            platosQuery += ` ORDER BY categoria_id, nombre`;
-            
-            const platosResult = await client.query(platosQuery, queryParams);
-            
-            const categorias = categoriasResult.rows;
-            const productos = platosResult.rows;
-            
-            client.release();
-            
-            // Si no hay datos en BD, usar datos de demostración
-            if (categorias.length === 0 || productos.length === 0) {
-                console.log('⚠️ API: No hay datos en BD, usando datos de demostración');
-                let productosDemo = menuDemo.platos;
-                
-                // Filtrar por categoría si se especifica
-                if (categoria && categoria !== 'null' && categoria !== 'undefined') {
-                    productosDemo = productosDemo.filter(p => p.categoria_id == categoria);
-                }
-                
-                return res.json({
-                    success: true,
-                    categorias: menuDemo.categorias,
-                    productos: productosDemo,
-                    usandoDatosDemo: true
-                });
-            }
-            
-            res.json({
-                success: true,
-                categorias: categorias,
-                productos: productos,
-                usandoDatosDemo: false
-            });
-            
-        } catch (dbError) {
-            client.release();
-            throw dbError;
-        }
-        
-    } catch (error) {
-        console.error('Error obteniendo API menú:', error);
-        
-        // Fallback a datos de demostración
-        console.log('🔄 API Fallback: usando datos de demostración');
-        const categoria = req.query.categoria;
-        let productos = menuDemo.platos;
-        
-        // Filtrar por categoría si se especifica
-        if (categoria && categoria !== 'null' && categoria !== 'undefined') {
-            productos = productos.filter(p => p.categoria_id == categoria);
-        }
-        
-        res.json({
-            success: true,
-            categorias: menuDemo.categorias,
-            productos: productos,
-            usandoDatosDemo: true
-        });
+    // FORZAR DATOS DEMO PARA API
+    console.log('🖼️ API: Forzando uso de datos de demostración con imágenes');
+    const categoria = req.query.categoria;
+    let productosDemo = menuDemo.platos;
+    
+    // Filtrar por categoría si se especifica
+    if (categoria && categoria !== 'null' && categoria !== 'undefined') {
+        productosDemo = productosDemo.filter(p => p.categoria_id == categoria);
     }
+    
+    return res.json({
+        success: true,
+        categorias: menuDemo.categorias,
+        productos: productosDemo,
+        usandoDatosDemo: true
+    });
 });
 
 // API - Obtener categorías
@@ -504,29 +370,39 @@ const menuDemo = {
     ],
     platos: [
         // Entradas
-        { id: 1, nombre: "Bruschetta Mediterránea", descripcion: "Pan tostado con tomate, albahaca fresca y aceite de oliva", precio: 12.50, categoria_id: 1, imagen: "🥖", destacado: true },
-        { id: 2, nombre: "Tabla de Quesos Artesanales", descripcion: "Selección de quesos locales con frutos secos y miel", precio: 18.00, categoria_id: 1, imagen: "🧀", destacado: false },
-        { id: 3, nombre: "Ceviche de Pescado", descripcion: "Pescado fresco marinado en limón con cebolla morada", precio: 16.00, categoria_id: 1, imagen: "🐟", destacado: true },
+        { id: 1, nombre: "Bruschetta Mediterránea", descripcion: "Pan tostado con tomate, albahaca fresca y aceite de oliva", precio: 12.50, categoria_id: 1, imagen: "🥖", imagen_url: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 2, nombre: "Tabla de Quesos Artesanales", descripcion: "Selección de quesos locales con frutos secos y miel", precio: 18.00, categoria_id: 1, imagen: "🧀", imagen_url: "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=400&h=300&fit=crop&crop=center", destacado: false },
+        { id: 3, nombre: "Ceviche de Pescado", descripcion: "Pescado fresco marinado en limón con cebolla morada", precio: 16.00, categoria_id: 1, imagen: "🐟", imagen_url: "https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 16, nombre: "Ensalada César Premium", descripcion: "Lechuga romana, croutones, parmesano y aderezo césar casero", precio: 14.50, categoria_id: 1, imagen: "🥗", imagen_url: "https://images.unsplash.com/photo-1551248429-40975aa4de74?w=400&h=300&fit=crop&crop=center", destacado: false },
         
         // Platos Principales
-        { id: 4, nombre: "Salmón a la Parrilla", descripcion: "Salmón fresco con vegetales asados y salsa de limón", precio: 28.50, categoria_id: 2, imagen: "🐟", destacado: true },
-        { id: 5, nombre: "Ribeye Premium", descripcion: "Corte premium de 300g con papas rústicas y chimichurri", precio: 35.00, categoria_id: 2, imagen: "🥩", destacado: true },
-        { id: 6, nombre: "Pollo Mediterráneo", descripcion: "Pechuga de pollo con hierbas, tomates cherry y aceitunas", precio: 22.00, categoria_id: 2, imagen: "🍗", destacado: false },
+        { id: 4, nombre: "Salmón a la Parrilla", descripcion: "Salmón fresco con vegetales asados y salsa de limón", precio: 28.50, categoria_id: 2, imagen: "🐟", imagen_url: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 5, nombre: "Ribeye Premium", descripcion: "Corte premium de 300g con papas rústicas y chimichurri", precio: 35.00, categoria_id: 2, imagen: "🥩", imagen_url: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 6, nombre: "Pollo Mediterráneo", descripcion: "Pechuga de pollo con hierbas, tomates cherry y aceitunas", precio: 22.00, categoria_id: 2, imagen: "🍗", imagen_url: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=300&fit=crop&crop=center", destacado: false },
+        { id: 17, nombre: "Paella Valenciana", descripcion: "Arroz tradicional con mariscos, pollo y azafrán", precio: 32.00, categoria_id: 2, imagen: "🥘", imagen_url: "https://images.unsplash.com/photo-1534080564583-6be75777b70a?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 18, nombre: "Pulpo a la Gallega", descripcion: "Pulpo tierno con papas, pimentón dulce y aceite de oliva", precio: 26.00, categoria_id: 2, imagen: "🐙", imagen_url: "https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=400&h=300&fit=crop&crop=center", destacado: false },
         
         // Pastas
-        { id: 7, nombre: "Pasta Carbonara Clásica", descripcion: "Spaghetti con panceta, huevo, parmesano y pimienta negra", precio: 19.50, categoria_id: 3, imagen: "🍝", destacado: true },
-        { id: 8, nombre: "Ravioli de Espinaca", descripcion: "Pasta rellena de espinaca y ricotta con salsa de mantequilla", precio: 21.00, categoria_id: 3, imagen: "🥟", destacado: false },
-        { id: 9, nombre: "Lasaña de la Casa", descripcion: "Lasaña tradicional con carne, bechamel y queso gratinado", precio: 24.00, categoria_id: 3, imagen: "🍝", destacado: true },
+        { id: 7, nombre: "Pasta Carbonara Clásica", descripcion: "Spaghetti con panceta, huevo, parmesano y pimienta negra", precio: 19.50, categoria_id: 3, imagen: "🍝", imagen_url: "https://images.unsplash.com/photo-1618040996337-56904b7850b9?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 8, nombre: "Ravioli de Espinaca", descripcion: "Pasta rellena de espinaca y ricotta con salsa de mantequilla", precio: 21.00, categoria_id: 3, imagen: "🥟", imagen_url: "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&h=300&fit=crop&crop=center", destacado: false },
+        { id: 9, nombre: "Lasaña de la Casa", descripcion: "Lasaña tradicional con carne, bechamel y queso gratinado", precio: 24.00, categoria_id: 3, imagen: "🍝", imagen_url: "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 19, nombre: "Risotto de Champiñones", descripcion: "Arroz cremoso con champiñones porcini y trufa", precio: 23.50, categoria_id: 3, imagen: "🍚", imagen_url: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400&h=300&fit=crop&crop=center", destacado: false },
+        { id: 20, nombre: "Gnocchi al Pesto", descripcion: "Ñoquis caseros con pesto de albahaca y piñones", precio: 20.00, categoria_id: 3, imagen: "🥟", imagen_url: "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&h=300&fit=crop&crop=center", destacado: false },
         
         // Postres
-        { id: 10, nombre: "Tiramisú Artesanal", descripcion: "Postre italiano con café, mascarpone y cacao", precio: 8.50, categoria_id: 4, imagen: "🍰", destacado: true },
-        { id: 11, nombre: "Cheesecake de Frutos Rojos", descripcion: "Cremoso cheesecake con mermelada casera de frutos rojos", precio: 9.00, categoria_id: 4, imagen: "🍓", destacado: false },
-        { id: 12, nombre: "Volcán de Chocolate", descripcion: "Bizcocho de chocolate caliente con centro líquido", precio: 10.50, categoria_id: 4, imagen: "🍫", destacado: true },
+        { id: 10, nombre: "Tiramisú Artesanal", descripcion: "Postre italiano con café, mascarpone y cacao", precio: 8.50, categoria_id: 4, imagen: "🍰", imagen_url: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 11, nombre: "Cheesecake de Frutos Rojos", descripcion: "Cremoso cheesecake con mermelada casera de frutos rojos", precio: 9.00, categoria_id: 4, imagen: "🍓", imagen_url: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=400&h=300&fit=crop&crop=center", destacado: false },
+        { id: 12, nombre: "Volcán de Chocolate", descripcion: "Bizcocho de chocolate caliente con centro líquido", precio: 10.50, categoria_id: 4, imagen: "🍫", imagen_url: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 21, nombre: "Crème Brûlée", descripcion: "Crema catalana con azúcar caramelizada", precio: 9.50, categoria_id: 4, imagen: "🍮", imagen_url: "https://images.unsplash.com/photo-1470324161839-ce2bb6fa6bc3?w=400&h=300&fit=crop&crop=center", destacado: false },
+        { id: 22, nombre: "Tarta de Limón", descripcion: "Tarta cremosa de limón con merengue italiano", precio: 8.00, categoria_id: 4, imagen: "🍋", imagen_url: "https://images.unsplash.com/photo-1519915028121-7d3463d20b13?w=400&h=300&fit=crop&crop=center", destacado: false },
         
         // Bebidas
-        { id: 13, nombre: "Sangría de la Casa", descripcion: "Sangría tradicional con frutas frescas", precio: 7.50, categoria_id: 5, imagen: "🍷", destacado: false },
-        { id: 14, nombre: "Limonada Artesanal", descripcion: "Limonada fresca con hierbas aromáticas", precio: 5.50, categoria_id: 5, imagen: "🍋", destacado: false },
-        { id: 15, nombre: "Café Espresso Premium", descripcion: "Café de origen único, tostado artesanalmente", precio: 4.00, categoria_id: 5, imagen: "☕", destacado: true }
+        { id: 13, nombre: "Sangría de la Casa", descripcion: "Sangría tradicional con frutas frescas", precio: 7.50, categoria_id: 5, imagen: "🍷", imagen_url: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&h=300&fit=crop&crop=center", destacado: false },
+        { id: 14, nombre: "Limonada Artesanal", descripcion: "Limonada fresca con hierbas aromáticas", precio: 5.50, categoria_id: 5, imagen: "🍋", imagen_url: "https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=400&h=300&fit=crop&crop=center", destacado: false },
+        { id: 15, nombre: "Café Espresso Premium", descripcion: "Café de origen único, tostado artesanalmente", precio: 4.00, categoria_id: 5, imagen: "☕", imagen_url: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 23, nombre: "Mojito Clásico", descripcion: "Ron blanco, menta fresca, lima y soda", precio: 8.50, categoria_id: 5, imagen: "🍸", imagen_url: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&h=300&fit=crop&crop=center", destacado: true },
+        { id: 24, nombre: "Smoothie de Frutas Tropicales", descripcion: "Batido natural de mango, piña y maracuyá", precio: 6.50, categoria_id: 5, imagen: "🥤", imagen_url: "https://images.unsplash.com/photo-1546173159-315724a31696?w=400&h=300&fit=crop&crop=center", destacado: false },
+        { id: 25, nombre: "Vino Tinto Reserva", descripcion: "Selección especial de nuestra bodega", precio: 12.00, categoria_id: 5, imagen: "🍷", imagen_url: "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=400&h=300&fit=crop&crop=center", destacado: false }
     ]
 };
 

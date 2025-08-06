@@ -55,7 +55,13 @@
                             <% destacados.forEach((plato, index) => { %>
                             <div class="carrusel-item">
                                 <div class="plato-destacado">
-                                    <div class="plato-imagen"><%= plato.imagen || plato.imagen_url || '🍽️' %></div>
+                                    <div class="plato-imagen">
+                                        <% if (plato.imagen_url) { %>
+                                            <img src="<%= plato.imagen_url %>" alt="<%= plato.nombre %>" class="plato-img">
+                                        <% } else { %>
+                                            <%= plato.imagen || '🍽️' %>
+                                        <% } %>
+                                    </div>
                                     <div class="plato-info">
                                         <h4 class="plato-nombre"><%= plato.nombre %></h4>
                                         <p class="plato-descripcion"><%= plato.descripcion %></p>
@@ -117,7 +123,12 @@
                     <template x-for="producto in productosFiltrados" :key="producto.id">
                         <div class="product-card">
                             <div class="product-image">
-                                <span class="product-emoji" x-text="producto.imagen"></span>
+                                <template x-if="producto.imagen_url">
+                                    <img :src="producto.imagen_url" :alt="producto.nombre" class="product-img">
+                                </template>
+                                <template x-if="!producto.imagen_url">
+                                    <span class="product-emoji" x-text="producto.imagen"></span>
+                                </template>
                                 <div class="product-badge" x-show="producto.destacado">⭐ Destacado</div>
                             </div>
                             <div class="product-info">
@@ -152,7 +163,12 @@
                             <!-- Información del producto -->
                             <div class="producto-info">
                                 <div class="producto-imagen">
-                                    <span x-text="productoSeleccionado?.imagen || '🍽️'"></span>
+                                    <template x-if="productoSeleccionado?.imagen_url">
+                                        <img :src="productoSeleccionado.imagen_url" :alt="productoSeleccionado.nombre" class="producto-img">
+                                    </template>
+                                    <template x-if="!productoSeleccionado?.imagen_url">
+                                        <span x-text="productoSeleccionado?.imagen || '🍽️'"></span>
+                                    </template>
                                 </div>
                                 <div class="producto-detalles">
                                     <h4 x-text="productoSeleccionado?.nombre"></h4>
