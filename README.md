@@ -345,6 +345,6 @@ Para reportar bugs o solicitar features:
 ---
 
 ### 👨‍💻 **Desarrollado con ❤️ por Talento Tech Grupo E**
-**Autores:** Jesús Gil, César Sáenz, Brandon Torre  
+**Autores:** Jesús Gil, César Sáenz, Brandon Torres  
 **GitHub:** https://github.com/TalentoTechGrupoE/restaurante-bella-vista.git  
 **Email:** talentotechgrupoe@gmail.com

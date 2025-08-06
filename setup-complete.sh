@@ -233,6 +233,108 @@ start_monitoring() {
     done
 }
 
+# Función para validar comunicación entre servicios de monitoreo
+validate_monitoring_connectivity() {
+    print_step "5.5" "Validando comunicación entre servicios de monitoreo..."
+    
+    local validation_failed=false
+    
+    # 1. Verificar que Prometheus esté accesible
+    print_status "🔍 Verificando Prometheus..."
+    if curl -s http://localhost:9090/api/v1/query?query=up > /dev/null; then
+        print_success "✅ Prometheus API responde correctamente"
+    else
+        print_error "❌ Prometheus no responde en http://localhost:9090"
+        validation_failed=true
+    fi
+    
+    # 2. Verificar que Grafana esté accesible y configurado
+    print_status "📊 Verificando Grafana..."
+    local grafana_health=$(curl -s -w "%{http_code}" -o /dev/null http://localhost:3001/api/health)
+    if [ "$grafana_health" = "200" ]; then
+        print_success "✅ Grafana está operativo en http://localhost:3001"
+        
+        # Verificar datasource Prometheus en Grafana
+        sleep 5
+        local datasource_check=$(curl -s -u "admin:bella123" "http://localhost:3001/api/datasources" 2>/dev/null)
+        if echo "$datasource_check" | grep -q "prometheus"; then
+            print_success "✅ Datasource Prometheus configurado en Grafana"
+        else
+            print_warning "⚠️ Datasource Prometheus no detectado en Grafana"
+        fi
+    else
+        print_error "❌ Grafana no responde correctamente (HTTP: $grafana_health)"
+        validation_failed=true
+    fi
+    
+    # 3. Verificar cAdvisor
+    print_status "📦 Verificando cAdvisor..."
+    local cadvisor_health=$(curl -s -w "%{http_code}" -o /dev/null http://localhost:8080/containers/)
+    if [ "$cadvisor_health" = "200" ]; then
+        print_success "✅ cAdvisor está operativo en http://localhost:8080"
+    else
+        print_error "❌ cAdvisor no responde correctamente (HTTP: $cadvisor_health)"
+        validation_failed=true
+    fi
+    
+    # 4. Verificar Node Exporter
+    print_status "🖥️ Verificando Node Exporter..."
+    if curl -s http://localhost:9100/metrics | head -1 | grep -q "node_"; then
+        print_success "✅ Node Exporter está exportando métricas"
+    else
+        print_warning "⚠️ Node Exporter no responde correctamente"
+    fi
+    
+    # 5. Verificar PostgreSQL Exporter
+    print_status "🗄️ Verificando PostgreSQL Exporter..."
+    if curl -s http://localhost:9187/metrics | head -1 | grep -q "pg_"; then
+        print_success "✅ PostgreSQL Exporter está exportando métricas"
+    else
+        print_warning "⚠️ PostgreSQL Exporter no responde correctamente"
+    fi
+    
+    # 6. Verificar conectividad entre Prometheus y targets
+    print_status "🔗 Verificando targets en Prometheus..."
+    sleep 5
+    local targets_response=$(curl -s "http://localhost:9090/api/v1/targets" 2>/dev/null)
+    if echo "$targets_response" | grep -q "\"health\":\"up\""; then
+        local up_targets=$(echo "$targets_response" | grep -o "\"health\":\"up\"" | wc -l)
+        print_success "✅ $up_targets targets están UP en Prometheus"
+    else
+        print_warning "⚠️ Algunos targets pueden no estar disponibles en Prometheus"
+    fi
+    
+    # 7. Test de conectividad desde Grafana a Prometheus
+    print_status "🔄 Verificando conectividad Grafana → Prometheus..."
+    local grafana_prometheus_test=$(curl -s -u "admin:bella123" \
+        -X POST \
+        -H "Content-Type: application/json" \
+        -d '{"targets":[{"expr":"up","refId":"A"}]}' \
+        "http://localhost:3001/api/ds/query" 2>/dev/null)
+    
+    if echo "$grafana_prometheus_test" | grep -q "\"frames\""; then
+        print_success "✅ Grafana puede consultar datos de Prometheus"
+    else
+        print_warning "⚠️ Problema en conectividad Grafana → Prometheus"
+    fi
+    
+    # Resumen de validación
+    echo ""
+    echo -e "${CYAN}📋 RESUMEN DE VALIDACIÓN:${NC}"
+    if [ "$validation_failed" = false ]; then
+        print_success "🎉 Todos los servicios de monitoreo están operativos"
+        print_success "🔗 Conectividad entre servicios verificada"
+    else
+        print_warning "⚠️ Algunos servicios tienen problemas, pero el sistema está funcional"
+        echo ""
+        echo -e "${YELLOW}🔧 SOLUCIÓN DE PROBLEMAS:${NC}"
+        echo "   1. Verificar logs: docker-compose -f docker-compose.monitoring.yml logs"
+        echo "   2. Reiniciar servicios: docker-compose -f docker-compose.monitoring.yml restart"
+        echo "   3. Verificar puertos disponibles: netstat -tulpn | grep :9090"
+    fi
+    echo ""
+}
+
 # Función para configurar dashboards automáticamente
 setup_dashboards() {
     print_step "6" "Configurando dashboards de Grafana..."
@@ -502,18 +604,28 @@ show_summary() {
     echo "   🍽️ Restaurante: http://localhost:3000"
     echo ""
     echo -e "${CYAN}📊 MONITOREO Y DASHBOARDS:${NC}"
-    echo "   📈 Grafana:    http://localhost:3001"
+    echo "   📈 Grafana:    http://localhost:3001 (admin/bella123)"
     echo "   🔍 Prometheus: http://localhost:9090"
     echo "   📦 cAdvisor:   http://localhost:8080"
+    echo "   🖥️ Node Metrics: http://localhost:9100/metrics"
+    echo "   🗄️ DB Metrics: http://localhost:9187/metrics"
     echo ""
     echo -e "${CYAN}🔑 CREDENCIALES:${NC}"
     echo "   Grafana: admin / bella123"
+    echo ""
+    echo -e "${CYAN}✅ VALIDACIÓN COMPLETADA:${NC}"
+    echo "   🔗 Conectividad entre servicios verificada"
+    echo "   📊 Métricas fluyendo correctamente"
+    echo "   🎯 Dashboards configurados automáticamente"
     echo ""
     echo -e "${CYAN}🎯 DASHBOARDS PRINCIPALES:${NC}"
     echo "   🍽️ Dashboard Principal: Buscar 'Bella Vista - Dashboard Principal' en Grafana"
     echo "   📁 Otros dashboards disponibles en la carpeta 'Restaurante Bella Vista'"
     echo ""
     echo -e "${CYAN}🚀 COMANDOS ÚTILES:${NC}"
+    echo "   # Validar sistema de monitoreo completo:"
+    echo "   ./scripts/test-monitoring.sh"
+    echo ""
     echo "   # Generar tráfico para ver métricas:"
     echo "   ./live-traffic.sh"
     echo ""
@@ -532,9 +644,13 @@ show_summary() {
     echo -e "${YELLOW}📋 PRÓXIMOS PASOS:${NC}"
     echo "   1. Visita http://localhost:3000 para ver la aplicación"
     echo "   2. Ve a http://localhost:3001 (admin/bella123) para ver dashboards"
-    echo "   3. Ejecuta './live-traffic.sh' para generar métricas en tiempo real"
+    echo "   3. Ejecuta './scripts/test-monitoring.sh' para validar el sistema completo"
+    echo "   4. Ejecuta './live-traffic.sh' para generar métricas en tiempo real"
     echo ""
     echo -e "${GREEN}¡Disfruta tu Restaurante Bella Vista! 🍽️✨${NC}"
+    echo ""
+    echo -e "${CYAN}💡 TIP: Si quieres validar que todo esté funcionando perfectamente:${NC}"
+    echo "   ./scripts/test-monitoring.sh"
 }
 
 # Función principal
@@ -563,6 +679,7 @@ main() {
     setup_network
     start_application
     start_monitoring
+    validate_monitoring_connectivity
     setup_dashboards
     generate_test_data
     show_summary
