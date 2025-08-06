@@ -147,21 +147,83 @@ start_application() {
     print_step "4" "Iniciando aplicación del restaurante..."
     
     print_status "Construyendo imágenes y levantando servicios..."
-    docker-compose up -d --build
+    
+    # Primer intento: build completo
+    if docker-compose up -d --build; then
+        print_success "✅ Docker-compose ejecutado exitosamente"
+    else
+        print_warning "❌ Fallo en docker-compose con --build, intentando sin build..."
+        
+        # Segundo intento: sin build
+        if docker-compose up -d; then
+            print_warning "✅ Docker-compose ejecutado sin build (usando imágenes existentes)"
+        else
+            print_error "❌ Fallo en ambos intentos de docker-compose"
+            print_error "   Esto puede deberse a problemas de conectividad o imágenes faltantes"
+            
+            # Verificar si las imágenes ya existen
+            if docker images | grep -q "restaurante-bella-vista-v2-frontend-usuario"; then
+                print_status "Intentando usar imágenes existentes..."
+                if docker-compose up -d --no-deps; then
+                    print_success "✅ Usando imágenes locales existentes"
+                else
+                    print_error "❌ No se pudo iniciar con imágenes existentes"
+                    return 1
+                fi
+            else
+                print_error "❌ No hay imágenes locales disponibles"
+                print_error "🔧 SOLUCIÓN MANUAL:"
+                echo "   1. Verificar conectividad: ping docker.io"
+                echo "   2. Reiniciar Docker: sudo systemctl restart docker"
+                echo "   3. Intentar pull manual: docker pull node:18-alpine"
+                echo "   4. Verificar proxy/firewall que bloquee Docker Hub"
+                return 1
+            fi
+        fi
+    fi
     
     print_status "Esperando que PostgreSQL esté listo..."
     sleep 15
     
     # Verificar que los servicios estén corriendo
     local services=("bella-vista-postgres" "bella-vista-frontend-usuario")
+    local failed_services=()
+    
     for service in "${services[@]}"; do
         if docker ps --format "table {{.Names}}" | grep -q "$service"; then
             print_success "✅ $service está ejecutándose"
         else
             print_error "❌ $service no está ejecutándose"
-            return 1
+            failed_services+=("$service")
         fi
     done
+    
+    # Si hay servicios fallidos, intentar diagnóstico
+    if [ ${#failed_services[@]} -ne 0 ]; then
+        print_warning "🔍 Diagnóstico de servicios fallidos:"
+        for service in "${failed_services[@]}"; do
+            echo "   📋 Logs de $service:"
+            docker-compose logs --tail=10 "$service" 2>/dev/null || echo "      No hay logs disponibles"
+        done
+        
+        # Intentar restart de servicios específicos
+        print_status "Intentando reiniciar servicios fallidos..."
+        for service in "${failed_services[@]}"; do
+            docker-compose restart "$service" 2>/dev/null || true
+        done
+        
+        sleep 10
+        
+        # Verificar nuevamente
+        for service in "${failed_services[@]}"; do
+            if docker ps --format "table {{.Names}}" | grep -q "$service"; then
+                print_success "✅ $service recuperado después del reinicio"
+            else
+                print_error "❌ $service sigue fallando"
+                return 1
+            fi
+        done
+    fi
     
     # Verificar que la aplicación responda
     local max_attempts=30
@@ -174,6 +236,8 @@ start_application() {
         
         if [ $attempt -eq $max_attempts ]; then
             print_error "❌ La aplicación no responde después de $max_attempts intentos"
+            print_status "🔍 Verificando logs de la aplicación..."
+            docker-compose logs --tail=20 bella-vista-frontend-usuario
             return 1
         fi
         
@@ -183,17 +247,76 @@ start_application() {
     done
 }
 
-# Función para levantar monitoreo
+# Función para verificar el estado del monitoreo
+check_monitoring_health() {
+    local monitoring_services=("bella-vista-prometheus" "bella-vista-grafana" "bella-vista-postgres-exporter" "bella-vista-node-exporter" "bella-vista-cadvisor")
+    local failed_services=()
+    
+    for service in "${monitoring_services[@]}"; do
+        if ! docker ps --format "table {{.Names}}" | grep -q "$service"; then
+            failed_services+=("$service")
+        fi
+    done
+    
+    if [ ${#failed_services[@]} -eq 0 ]; then
+        return 0  # Todo está bien
+    else
+        return 1  # Hay servicios fallidos
+    fi
+}
+
+# Función de respaldo para monitoreo usando setup-monitoring.sh
+setup_monitoring_fallback() {
+    print_warning "🔄 Intentando configuración de monitoreo con script especializado..."
+    
+    if [ -f "./scripts/setup-monitoring.sh" ]; then
+        print_status "Ejecutando setup-monitoring.sh como respaldo..."
+        chmod +x ./scripts/setup-monitoring.sh
+        
+        # Ejecutar el script especializado de monitoreo
+        if ./scripts/setup-monitoring.sh; then
+            print_success "✅ Script setup-monitoring.sh ejecutado exitosamente"
+            return 0
+        else
+            print_error "❌ Script setup-monitoring.sh también falló"
+            return 1
+        fi
+    else
+        print_error "❌ Script setup-monitoring.sh no encontrado"
+        return 1
+    fi
+}
+
+# Función para levantar monitoreo con respaldo automático
 start_monitoring() {
     print_step "5" "Iniciando sistema de monitoreo..."
     
     if [ ! -f "docker-compose.monitoring.yml" ]; then
         print_error "Archivo docker-compose.monitoring.yml no encontrado"
-        return 1
+        
+        # Intentar usar el script de respaldo
+        print_warning "Intentando configurar monitoreo con script especializado..."
+        if setup_monitoring_fallback; then
+            return 0
+        else
+            return 1
+        fi
     fi
     
     print_status "Levantando servicios de monitoreo..."
-    docker-compose -f docker-compose.monitoring.yml up -d
+    
+    # Primer intento: usar docker-compose directamente
+    if docker-compose -f docker-compose.monitoring.yml up -d; then
+        print_success "✅ Docker-compose monitoreo ejecutado correctamente"
+    else
+        print_warning "❌ Fallo en docker-compose monitoreo, intentando respaldo..."
+        if setup_monitoring_fallback; then
+            return 0
+        else
+            print_error "❌ Ambos métodos de monitoreo fallaron"
+            return 1
+        fi
+    fi
     
     print_status "Conectando servicios a la red de monitoreo..."
     # Asegurar que todos los servicios estén en la misma red para conectividad
@@ -204,14 +327,30 @@ start_monitoring() {
     sleep 20
     
     # Verificar servicios de monitoreo
-    local monitoring_services=("bella-vista-prometheus" "bella-vista-grafana" "bella-vista-postgres-exporter" "bella-vista-node-exporter" "bella-vista-cadvisor")
-    for service in "${monitoring_services[@]}"; do
-        if docker ps --format "table {{.Names}}" | grep -q "$service"; then
-            print_success "✅ $service está ejecutándose"
+    if check_monitoring_health; then
+        print_success "✅ Todos los servicios de monitoreo están ejecutándose"
+    else
+        print_warning "⚠️ Algunos servicios de monitoreo fallaron, intentando respaldo..."
+        
+        # Limpiar servicios fallidos antes del respaldo
+        print_status "Limpiando servicios fallidos..."
+        docker-compose -f docker-compose.monitoring.yml down 2>/dev/null || true
+        sleep 5
+        
+        # Intentar respaldo
+        if setup_monitoring_fallback; then
+            # Verificar nuevamente después del respaldo
+            sleep 15
+            if check_monitoring_health; then
+                print_success "✅ Respaldo exitoso: servicios de monitoreo funcionando"
+            else
+                print_warning "⚠️ Algunos servicios aún tienen problemas, pero continuaremos"
+            fi
         else
-            print_warning "⚠️ $service no está ejecutándose correctamente"
+            print_warning "⚠️ No se pudo configurar el monitoreo completamente, pero la aplicación principal funciona"
+            return 1
         fi
-    done
+    fi
     
     # Verificar que Grafana responda
     local max_attempts=30
@@ -223,7 +362,9 @@ start_monitoring() {
         fi
         
         if [ $attempt -eq $max_attempts ]; then
-            print_warning "⚠️ Grafana no responde, pero continuaremos"
+            print_warning "⚠️ Grafana no responde después de $max_attempts intentos"
+            print_warning "   El monitoreo puede necesitar más tiempo para inicializarse"
+            print_status "   Puedes verificar el estado con: docker ps"
             break
         fi
         
@@ -231,6 +372,8 @@ start_monitoring() {
         sleep 2
         ((attempt++))
     done
+    
+    return 0
 }
 
 # Función para validar comunicación entre servicios de monitoreo
@@ -335,6 +478,47 @@ validate_monitoring_connectivity() {
     echo ""
 }
 
+# Función para corregir UIDs de dashboards existentes
+fix_dashboard_uids() {
+    local prometheus_uid="$1"
+    
+    print_status "Corrigiendo UIDs de dashboards existentes..."
+    
+    # Lista de archivos de dashboards a corregir
+    local dashboard_files=(
+        "monitoring/grafana/dashboards/contenedores.json"
+        "monitoring/grafana/dashboards/operacional-simple.json"
+        "monitoring/grafana/dashboards/operacional.json"
+        "monitoring/grafana/dashboards/ejecutivo.json"
+        "monitoring/grafana/dashboards/financiero.json"
+        "monitoring/grafana/dashboards/tecnico.json"
+    )
+    
+    for dashboard_file in "${dashboard_files[@]}"; do
+        if [ -f "$dashboard_file" ]; then
+            print_status "Actualizando UID en $dashboard_file..."
+            # Crear respaldo
+            cp "$dashboard_file" "${dashboard_file}.backup"
+            
+            # Reemplazar UID incorrecto con el correcto
+            sed -i.tmp "s/\"uid\": \"prometheus\"/\"uid\": \"$prometheus_uid\"/g" "$dashboard_file"
+            rm -f "${dashboard_file}.tmp"
+            
+            print_success "✅ $dashboard_file actualizado"
+        else
+            print_warning "⚠️ Dashboard $dashboard_file no encontrado, omitiendo..."
+        fi
+    done
+    
+    # Forzar recarga de dashboards en Grafana
+    print_status "Recargando dashboards en Grafana..."
+    if curl -X POST -u "admin:bella123" "http://localhost:3001/api/admin/provisioning/dashboards/reload" &> /dev/null; then
+        print_success "✅ Dashboards recargados exitosamente"
+    else
+        print_warning "⚠️ No se pudo recargar automáticamente, pero los archivos fueron actualizados"
+    fi
+}
+
 # Función para configurar dashboards automáticamente
 setup_dashboards() {
     print_step "6" "Configurando dashboards de Grafana..."
@@ -350,6 +534,11 @@ setup_dashboards() {
         print_warning "No se pudo obtener el UID del datasource, usando UID por defecto"
         prometheus_uid="PBFA97CFB590B2093"
     fi
+    
+    print_status "UID del datasource Prometheus: $prometheus_uid"
+    
+    # Corregir UIDs en dashboards existentes
+    fix_dashboard_uids "$prometheus_uid"
     
     print_status "Creando dashboard principal con datos en tiempo real..."
     
@@ -677,12 +866,50 @@ main() {
     check_requirements
     check_docker_running
     setup_network
-    start_application
-    start_monitoring
-    validate_monitoring_connectivity
-    setup_dashboards
+    
+    # Iniciar aplicación principal (crítico)
+    if ! start_application; then
+        print_error "❌ Fallo crítico: No se pudo iniciar la aplicación principal"
+        exit 1
+    fi
+    
+    # Iniciar monitoreo (no crítico, con respaldo)
+    local monitoring_success=true
+    if ! start_monitoring; then
+        print_warning "⚠️ El monitoreo no se configuró completamente"
+        monitoring_success=false
+    fi
+    
+    # Validar conectividad de monitoreo solo si se configuró
+    if [ "$monitoring_success" = true ]; then
+        validate_monitoring_connectivity
+        setup_dashboards
+    else
+        print_warning "🔧 SOLUCIÓN MANUAL PARA MONITOREO:"
+        echo "   1. Ejecuta: ./scripts/setup-monitoring.sh"
+        echo "   2. O reinstala manualmente: docker-compose -f docker-compose.monitoring.yml up -d"
+        echo "   3. Verifica logs: docker-compose -f docker-compose.monitoring.yml logs"
+    fi
+    
+    # Generar datos de prueba y mostrar resumen
     generate_test_data
     show_summary
+    
+    # Mensaje final según el estado del monitoreo
+    if [ "$monitoring_success" = true ]; then
+        echo ""
+        echo -e "${GREEN}🎉 ¡CONFIGURACIÓN COMPLETA EXITOSA!${NC}"
+        echo -e "${GREEN}   ✅ Aplicación principal funcionando${NC}"
+        echo -e "${GREEN}   ✅ Sistema de monitoreo operativo${NC}"
+    else
+        echo ""
+        echo -e "${YELLOW}⚠️ CONFIGURACIÓN PARCIALMENTE EXITOSA${NC}"
+        echo -e "${GREEN}   ✅ Aplicación principal funcionando perfectamente${NC}"
+        echo -e "${YELLOW}   ⚠️ Sistema de monitoreo necesita atención manual${NC}"
+        echo ""
+        echo -e "${CYAN}🔧 Para completar el monitoreo, ejecuta:${NC}"
+        echo "   ./scripts/setup-monitoring.sh"
+    fi
 }
 
 # Ejecutar función principal

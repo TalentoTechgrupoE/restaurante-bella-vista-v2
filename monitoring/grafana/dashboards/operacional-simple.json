@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "Dashboard ejecutivo para propietarios y gerentes del Restaurante Bella Vista",
+  "description": "Dashboard operacional simplificado para el Restaurante Bella Vista",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -20,16 +20,22 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
           "thresholds": {
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
               }
             ]
-          },
-          "unit": "currencyEUR"
+          }
         }
       },
       "gridPos": {
@@ -56,12 +62,12 @@
       "pluginVersion": "9.5.2",
       "targets": [
         {
-          "expr": "restaurante_ingresos_euros",
-          "legendFormat": "Ingresos Hoy",
+          "expr": "http_requests_total",
+          "legendFormat": "Total Requests",
           "refId": "A"
         }
       ],
-      "title": "💰 Ingresos Hoy",
+      "title": "📊 Total Peticiones HTTP",
       "type": "stat"
     },
     {
@@ -74,25 +80,23 @@
           "color": {
             "mode": "thresholds"
           },
-          "max": 100,
-          "min": 0,
           "thresholds": {
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": null
               },
               {
                 "color": "yellow",
-                "value": 70
+                "value": 1073741824
               },
               {
-                "color": "green",
-                "value": 85
+                "color": "red",
+                "value": 2147483648
               }
             ]
           },
-          "unit": "percent"
+          "unit": "bytes"
         }
       },
       "gridPos": {
@@ -103,6 +107,9 @@
       },
       "id": 2,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -111,19 +118,18 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "textMode": "auto"
       },
       "pluginVersion": "9.5.2",
       "targets": [
         {
-          "expr": "restaurante_ingresos_euros / 2000 * 100",
-          "legendFormat": "% Objetivo Diario",
+          "expr": "sum(container_memory_usage_bytes{id=\"/docker\"})",
+          "legendFormat": "Docker Memory Usage",
           "refId": "A"
         }
       ],
-      "title": "📈 Ventas vs Objetivo",
-      "type": "gauge"
+      "title": "💾 Uso de Memoria Docker",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -135,15 +141,23 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
           "thresholds": {
             "steps": [
               {
-                "color": "blue",
+                "color": "green",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.7
+              },
+              {
+                "color": "red",
+                "value": 0.9
               }
             ]
-          }
+          },
+          "unit": "percentunit"
         }
       },
       "gridPos": {
@@ -170,12 +184,12 @@
       "pluginVersion": "9.5.2",
       "targets": [
         {
-          "expr": "sum(restaurante_pedidos_total)",
-          "legendFormat": "Clientes Atendidos",
+          "expr": "rate(container_cpu_usage_seconds_total{id=\"/docker\"}[5m])",
+          "legendFormat": "Docker CPU Usage",
           "refId": "A"
         }
       ],
-      "title": "👥 Clientes Atendidos",
+      "title": "⚙️ Uso de CPU Docker",
       "type": "stat"
     },
     {
@@ -188,16 +202,18 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
           "thresholds": {
             "steps": [
               {
-                "color": "purple",
+                "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
-          },
-          "unit": "currencyEUR"
+          }
         }
       },
       "gridPos": {
@@ -224,12 +240,12 @@
       "pluginVersion": "9.5.2",
       "targets": [
         {
-          "expr": "restaurante_ingresos_euros / sum(restaurante_pedidos_total)",
-          "legendFormat": "Ticket Promedio",
+          "expr": "errors_total",
+          "legendFormat": "Total Errors",
           "refId": "A"
         }
       ],
-      "title": "🎯 Ticket Promedio",
+      "title": "🚨 Errores Totales",
       "type": "stat"
     },
     {
@@ -243,13 +259,47 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
           },
-          "mappings": []
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
         }
       },
       "gridPos": {
@@ -261,17 +311,9 @@
       "id": 5,
       "options": {
         "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "values": ["value"]
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "single",
@@ -280,13 +322,13 @@
       },
       "targets": [
         {
-          "expr": "topk(5, restaurante_items_pedidos_total)",
-          "legendFormat": "{{item}}",
+          "expr": "container_memory_usage_bytes{id=\"/docker\"}",
+          "legendFormat": "Docker Memory",
           "refId": "A"
         }
       ],
-      "title": "🍕 Top 5 Items Más Pedidos",
-      "type": "piechart"
+      "title": "💾 Memoria Docker en Tiempo Real",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -296,15 +338,50 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-GrYlRd"
+            "mode": "palette-classic"
           },
           "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
-          }
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
         }
       },
       "gridPos": {
@@ -315,66 +392,50 @@
       },
       "id": 6,
       "options": {
-        "calculate": false,
-        "cellGap": 1,
-        "color": {
-          "exponent": 0.5,
-          "fill": "dark-orange",
-          "mode": "scheme",
-          "reverse": false,
-          "scale": "exponential",
-          "scheme": "Oranges",
-          "steps": 64
-        },
-        "exemplars": {
-          "color": "rgba(255,0,255,0.7)"
-        },
-        "filterValues": {
-          "le": 1e-9
-        },
         "legend": {
-          "show": true
-        },
-        "rowsFrame": {
-          "layout": "auto"
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "tooltip": {
-          "show": true,
-          "yHistogram": false
-        },
-        "yAxis": {
-          "axisPlacement": "left",
-          "reverse": false
+          "mode": "single",
+          "sort": "none"
         }
       },
-      "pluginVersion": "9.5.2",
       "targets": [
         {
-          "expr": "rate(restaurante_pedidos_total[1h])",
-          "format": "time_series",
-          "legendFormat": "Hora {{hour}}",
+          "expr": "rate(http_requests_total[5m]) * 60",
+          "legendFormat": "Requests per minute - {{job}}",
           "refId": "A"
+        },
+        {
+          "expr": "database_connections_active",
+          "legendFormat": "Database connections",
+          "refId": "B"
         }
       ],
-      "title": "🕒 Heatmap - Pedidos por Hora",
-      "type": "heatmap"
+      "title": "📈 Actividad HTTP y BD",
+      "type": "timeseries"
     }
   ],
-  "refresh": "30s",
+  "refresh": "15s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["restaurante", "ejecutivo"],
+  "tags": [
+    "restaurante",
+    "operacional"
+  ],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "🏢 Restaurante Bella Vista - Ejecutivo",
-  "uid": "ejecutivo",
+  "title": "🍽️ Operaciones - Sistema Real",
+  "uid": "operacional-simple",
   "version": 1,
   "weekStart": ""
 }
